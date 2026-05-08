@@ -1,0 +1,95 @@
+{
+  "car": ["automobile", "auto", "vehicle"],
+  "automobile": ["car", "auto", "vehicle"],
+  "auto": ["car", "automobile", "vehicle"],
+  "vehicle": ["car", "automobile", "auto"],
+
+  "phone": ["telephone", "mobile", "cellphone"],
+  "telephone": ["phone"],
+  "mobile": ["phone", "cellphone"],
+  "cellphone": ["phone", "mobile"],
+  "smartphone": ["phone", "mobile"],
+
+  "tv": ["television"],
+  "television": ["tv"],
+
+  "movie": ["film"],
+  "film": ["movie"],
+
+  "photo": ["image", "picture", "pic"],
+  "image": ["photo", "picture", "pic"],
+  "picture": ["photo", "image", "pic"],
+  "pic": ["photo", "image", "picture"],
+
+  "doctor": ["physician", "medic"],
+  "physician": ["doctor"],
+  "medic": ["doctor"],
+
+  "lawyer": ["attorney"],
+  "attorney": ["lawyer"],
+
+  "job": ["employment", "work"],
+  "employment": ["job", "work"],
+  "work": ["job", "employment"],
+
+  "buy": ["purchase"],
+  "purchase": ["buy"],
+
+  "cheap": ["inexpensive", "affordable"],
+  "inexpensive": ["cheap", "affordable"],
+  "affordable": ["cheap", "inexpensive"],
+
+  "big": ["large"],
+  "large": ["big"],
+
+  "small": ["little"],
+  "little": ["small"],
+
+  "quick": ["fast"],
+  "fast": ["quick"],
+
+  "error": ["mistake", "bug"],
+  "mistake": ["error"],
+  "bug": ["error"],
+
+  "repair": ["fix"],
+  "fix": ["repair"],
+
+  "home": ["house"],
+  "house": ["home"],
+
+  "kid": ["child"],
+  "child": ["kid"],
+
+  "cat": ["feline"],
+  "feline": ["cat"],
+
+  "dog": ["canine"],
+  "canine": ["dog"],
+
+  "bike": ["bicycle"],
+  "bicycle": ["bike"],
+
+  "road": ["street"],
+  "street": ["road"],
+
+  "teacher": ["instructor"],
+  "instructor": ["teacher"],
+
+  "student": ["pupil"],
+  "pupil": ["student"],
+
+  "color": ["colour"],
+  "colour": ["color"],
+
+  "center": ["centre"],
+  "centre": ["center"],
+
+  "email": ["mail", "e-mail"],
+  "mail": ["email", "e-mail"],
+  "e-mail": ["email", "mail"],
+
+  "search": ["find", "lookup"],
+  "find": ["search", "lookup"],
+  "lookup": ["search", "find"]
+}

@@ -1,0 +1,638 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="hero-shell">
+    <div class="hero-brand">
+        <h1 class="hero-title">
+            <span class="hero-blue">M</span><span class="hero-red">u</span><span class="hero-yellow">l</span><span class="hero-blue">t</span><span class="hero-green">i</span><span class="hero-red">m</span><span class="hero-blue">e</span><span class="hero-yellow">d</span><span class="hero-green">i</span><span class="hero-red">a</span>
+            <span class="hero-word-gap"></span>
+            <span class="hero-blue">S</span><span class="hero-red">e</span><span class="hero-yellow">a</span><span class="hero-blue">r</span><span class="hero-green">c</span><span class="hero-red">h</span>
+        </h1>
+        <p class="hero-subtitle">
+            Search local files, indexed web pages, images, similar images, and audio transcripts from one search box.
+        </p>
+    </div>
+
+    <form method="post" class="search-form search-form-main" id="search-form">
+        <input type="hidden" name="action" value="search">
+
+        <div class="search-shell">
+            <div class="search-bar">
+                <div class="search-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M21 21L16.65 16.65M10.8 18.6C15.108 18.6 18.6 15.108 18.6 10.8C18.6 6.49218 15.108 3 10.8 3C6.49218 3 3 6.49218 3 10.8C3 15.108 6.49218 18.6 10.8 18.6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+
+                <input
+                    type="text"
+                    id="search-input"
+                    name="query"
+                    value="{{ query or '' }}"
+                    placeholder="Search documents, web pages, images, and audio..."
+                    class="search-input"
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+
+                <button type="submit" class="search-btn">Search</button>
+            </div>
+
+            <div id="autocomplete-box" class="autocomplete-box" hidden>
+                <ul id="autocomplete-list" class="autocomplete-list"></ul>
+            </div>
+        </div>
+
+        <div class="search-toolbar">
+            <div class="search-toolbar-left">
+                <div class="search-field-inline">
+                    <label for="top_k">Top K</label>
+                    <input
+                        type="number"
+                        id="top_k"
+                        name="top_k"
+                        value="{{ top_k or 10 }}"
+                        min="1"
+                        max="100"
+                    >
+                </div>
+
+                <label class="image-toggle" for="image_only">
+                    <input
+                        type="checkbox"
+                        id="image_only"
+                        name="image_only"
+                        value="1"
+                        {% if image_only %}checked{% endif %}
+                    >
+                    <span>Images only</span>
+                </label>
+            </div>
+
+            <div class="search-toolbar-right">
+                <span class="search-hint">Smart search with autocomplete, phrase, Boolean, image-only filtering, and audio transcript search</span>
+            </div>
+        </div>
+    </form>
+
+    {% if detected_mode %}
+    <div class="search-feedback-row">
+        <span class="feedback-chip">
+            Detected mode:
+            <strong>
+                {% if detected_mode == "ranked" %}
+                    Ranked
+                {% elif detected_mode == "phrase" %}
+                    Phrase
+                {% elif detected_mode == "boolean" %}
+                    Boolean
+                {% else %}
+                    {{ detected_mode }}
+                {% endif %}
+            </strong>
+        </span>
+
+        {% if image_only %}
+        <span class="feedback-chip feedback-chip-images">
+            Images only
+        </span>
+        {% endif %}
+
+        {% if results is not none %}
+        <span class="feedback-chip feedback-chip-soft">
+            {{ results|length }} result{% if results|length != 1 %}s{% endif %}
+        </span>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if suggestion %}
+    <div class="did-you-mean">
+        Did you mean:
+        <form method="post" class="did-you-mean-form">
+            <input type="hidden" name="action" value="search">
+            <input type="hidden" name="query" value="{{ suggestion }}">
+            <input type="hidden" name="top_k" value="{{ top_k or 10 }}">
+            {% if image_only %}
+            <input type="hidden" name="image_only" value="1">
+            {% endif %}
+            <button type="submit" class="suggestion-link">{{ suggestion }}</button>
+        </form>
+    </div>
+    {% endif %}
+</section>
+
+<section class="query-image-shell">
+    <div class="query-image-card">
+        <div class="query-image-copy">
+            <span class="query-image-badge">🖼️ Query by Image</span>
+            <h2>Find visually similar indexed images</h2>
+            <p>
+                Upload a query image or paste a local image path. The system compares it against indexed local images
+                using lightweight visual features.
+            </p>
+
+            <ul class="query-image-points">
+                <li>Works only with indexed local images.</li>
+                <li>Uses average color, small thumbnail shape, and RGB histogram features.</li>
+                <li>Not semantic AI matching, CLIP, or embeddings.</li>
+            </ul>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="query-image-form">
+            <input type="hidden" name="action" value="similar_image">
+
+            <div>
+                <label for="similar_image_path">Query image path</label>
+                <input
+                    type="text"
+                    id="similar_image_path"
+                    name="similar_image_path"
+                    placeholder="C:\Users\mina adel\Pictures\query.png"
+                    value="{{ similar_image_path or '' }}"
+                >
+            </div>
+
+            <div>
+                <label for="similar_image_file">Or upload query image</label>
+                <input
+                    type="file"
+                    id="similar_image_file"
+                    name="similar_image_file"
+                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                >
+            </div>
+
+            <div id="query-image-preview" class="query-image-preview" hidden>
+                <div class="query-image-preview-copy">
+                    <span class="query-image-preview-label">Selected upload preview</span>
+                    <button type="button" id="clear-query-image" class="query-image-clear-btn">
+                        Clear upload
+                    </button>
+                </div>
+
+                <img
+                    id="query-image-preview-img"
+                    class="query-image-preview-img"
+                    alt="Selected query image preview"
+                >
+            </div>
+
+            <div class="query-image-form-row">
+                <div>
+                    <label for="similar_top_k">Top K</label>
+                    <input
+                        type="number"
+                        id="similar_top_k"
+                        name="similar_top_k"
+                        min="1"
+                        max="50"
+                        value="{{ similar_top_k or 5 }}"
+                    >
+                </div>
+
+                <button type="submit">Find Similar</button>
+            </div>
+
+            <p class="form-note">
+                This does not replace text search. Higher similarity means visually closer according to simple image features.
+            </p>
+        </form>
+    </div>
+</section>
+
+<section class="stats-shell">
+    <div class="section-head">
+        <h2>Index stats</h2>
+        <p>Current indexed content overview.</p>
+    </div>
+
+    <div class="stats-grid">
+        <article class="stat-card">
+            <div class="stat-label">Total documents</div>
+            <div class="stat-value">{{ stats.total_docs }}</div>
+        </article>
+
+        <article class="stat-card">
+            <div class="stat-label">Local files</div>
+            <div class="stat-value">{{ stats.local_files }}</div>
+        </article>
+
+        <article class="stat-card">
+            <div class="stat-label">Web pages</div>
+            <div class="stat-value">{{ stats.web_pages }}</div>
+        </article>
+    </div>
+</section>
+
+{% if similar_results is defined and similar_results is not none %}
+<section class="results-shell">
+    <div class="results-header similar-results-header">
+        <h2>Similar Image Results</h2>
+
+        {% if similar_image_path %}
+        <p class="results-subtitle">
+            Showing visually similar indexed images for <strong>{{ similar_image_path }}</strong>
+        </p>
+        {% endif %}
+
+        <div class="similar-results-note">
+            <span>Score range: 0% to 100%.</span>
+            <span>Compared using color, thumbnail, and histogram features.</span>
+            <span>This is lightweight visual similarity, not semantic AI matching.</span>
+        </div>
+    </div>
+
+    {% if similar_results %}
+        <div class="results-list">
+            {% for r in similar_results %}
+                <article class="result-card result-card-image result-card-similar">
+                    <div class="result-url-row">
+                        <span class="result-favicon">🖼️</span>
+                        <span class="result-url">{{ r.path }}</span>
+                    </div>
+
+                    {% if r.is_image and not r.is_web %}
+                        <div class="result-image-wrap">
+                            <img
+                                src="{{ url_for('image_preview', doc_id=r.doc_id) }}"
+                                alt="{{ r.title or 'Similar image result' }}"
+                                class="result-image-thumb"
+                                loading="lazy"
+                            >
+                        </div>
+                    {% endif %}
+
+                    <h3 class="result-title">
+                        {{ r.title or r.path }}
+                    </h3>
+
+                    <div class="result-meta-top">
+                        <span class="badge">
+                            {{ r.type_label or r.file_type or "Image" }}
+                        </span>
+
+                        {% if r.score is not none %}
+                            <span class="meta-pill meta-pill-strong">
+                                Similarity: {{ "%.1f"|format(r.score * 100) }}%
+                            </span>
+                            <span class="meta-pill">Visual feature match</span>
+                        {% endif %}
+                    </div>
+
+                    {% if r.snippet %}
+                        <p class="result-snippet">{{ r.snippet }}</p>
+                    {% endif %}
+
+                    <p class="similar-score-help">
+                        Ranking is based on simple image features, so visually close colors may score higher than semantic meaning.
+                    </p>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-results">
+            <div class="empty-results-icon">🖼️</div>
+            <h3>No similar indexed images found</h3>
+            <p>Index local image files first, then search using a readable query image path or uploaded image.</p>
+        </div>
+    {% endif %}
+</section>
+{% endif %}
+
+{% if message %}
+<div class="message-box {% if message_type == 'error' %}message-error{% elif message_type == 'warning' %}message-warning{% else %}message-success{% endif %}">
+    {{ message }}
+</div>
+{% endif %}
+
+{% if results is not none %}
+<section class="results-shell">
+    <div class="results-header">
+        <h2>{% if image_only %}Image Results{% else %}Results{% endif %}</h2>
+        {% if query %}
+        <p class="results-subtitle">
+            Showing {% if image_only %}image{% endif %} search results for <strong>{{ query }}</strong>
+        </p>
+        {% endif %}
+    </div>
+
+    {% if related_searches %}
+    <div class="related-searches">
+        <div class="related-searches-head">
+            <h3>Explore related searches</h3>
+            <p>Click a chip to search a more specific version of your query.</p>
+        </div>
+
+        {% for group in related_searches %}
+            <div class="related-search-group">
+                <span class="related-search-label">{{ group.label }}</span>
+
+                <div class="related-search-chips">
+                    {% for item in group.queries %}
+                        <form method="post" class="related-search-chip-form">
+                            <input type="hidden" name="action" value="search">
+                            <input type="hidden" name="query" value="{{ item }}">
+                            <input type="hidden" name="top_k" value="{{ top_k or 10 }}">
+
+                            {% if image_only %}
+                                <input type="hidden" name="image_only" value="1">
+                            {% endif %}
+
+                            <button type="submit" class="related-search-chip">
+                                {{ item }}
+                            </button>
+                        </form>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if results %}
+        <div class="results-list">
+            {% for r in results %}
+                <article class="result-card {% if r.is_image %}result-card-image{% endif %}">
+                    <div class="result-url-row">
+                        {% if r.is_web %}
+                            <span class="result-favicon">🌐</span>
+                            <span class="result-url">{{ r.path }}</span>
+                        {% elif r.is_image %}
+                            <span class="result-favicon">🖼️</span>
+                            <span class="result-url">{{ r.path }}</span>
+                        {% elif r.is_audio %}
+                            <span class="result-favicon">🎧</span>
+                            <span class="result-url">{{ r.path }}</span>
+                        {% else %}
+                            <span class="result-favicon">📄</span>
+                            <span class="result-url">{{ r.path }}</span>
+                        {% endif %}
+                    </div>
+
+                    {% if r.is_image and not r.is_web %}
+                        <div class="result-image-wrap">
+                            <img
+                                src="{{ url_for('image_preview', doc_id=r.doc_id) }}"
+                                alt="{{ r.title or 'Image result' }}"
+                                class="result-image-thumb"
+                                loading="lazy"
+                            >
+                        </div>
+                    {% endif %}
+
+                    {% if r.is_audio and not r.is_web %}
+                        <div class="audio-player-wrap">
+                            <audio controls preload="metadata" class="audio-player">
+                                <source src="{{ url_for('audio_preview', doc_id=r.doc_id) }}">
+                                Your browser does not support the audio player.
+                            </audio>
+                        </div>
+                    {% endif %}
+
+                    <h3 class="result-title">
+                        {% if r.is_web %}
+                            <a href="{{ r.path }}" target="_blank" rel="noopener noreferrer">
+                                {{ r.title or r.path }}
+                            </a>
+                        {% else %}
+                            {{ r.title or r.path }}
+                        {% endif %}
+                    </h3>
+
+                    <div class="result-meta-top">
+                        <span class="badge">{{ r.type_label or r.file_type or "Document" }}</span>
+
+                        {% if r.score is not none %}
+                            <span class="meta-pill">Score: {{ "%.4f"|format(r.score) }}</span>
+                        {% endif %}
+
+                        {% if r.word_count is not none %}
+                            <span class="meta-pill">Words: {{ r.word_count }}</span>
+                        {% endif %}
+                    </div>
+
+                    {% if r.snippet %}
+                        <p class="result-snippet">{{ r.snippet }}</p>
+                    {% endif %}
+
+                    {% if r.is_audio %}
+                        <div class="audio-analysis-card">
+                            <div class="audio-analysis-header">
+                                <span>🎧 Audio content</span>
+                                <small>Transcript-based, not voice identity recognition</small>
+                            </div>
+
+                            {% if r.audio_summary %}
+                                <p><strong>Content:</strong> {{ r.audio_summary }}</p>
+                            {% endif %}
+
+                            {% if r.audio_conclusion %}
+                                <p><strong>Conclusion:</strong> {{ r.audio_conclusion }}</p>
+                            {% endif %}
+
+                            {% if r.audio_transcript %}
+                                <div class="audio-transcript-block">
+                                    <button
+                                        type="button"
+                                        class="audio-transcript-toggle"
+                                        aria-expanded="false"
+                                    >
+                                        See full transcript
+                                    </button>
+
+                                    <div class="audio-transcript-text" hidden>
+                                        <strong>Full transcript:</strong>
+                                        <p>{{ r.audio_transcript }}</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    {% if r.matched_terms %}
+                        <p class="result-matched">
+                            <strong>Matched terms:</strong>
+                            {{ r.matched_terms | join(", ") }}
+                        </p>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-results">
+            <div class="empty-results-icon">🔎</div>
+            <h3>No results found</h3>
+            <p>
+                {% if image_only %}
+                    Try a filename word, folder name, or sidecar caption text that matches your indexed images.
+                {% else %}
+                    Try a broader query, an exact quoted phrase, or a more specific keyword.
+                {% endif %}
+            </p>
+        </div>
+    {% endif %}
+</section>
+{% endif %}
+
+<section class="admin-shell">
+    <div class="admin-header">
+        <h2>Admin Tools</h2>
+        <p>Manage indexing, inspect documents, and view analytics.</p>
+    </div>
+
+    <div class="admin-grid">
+        <div class="admin-card">
+            <h3>Index Local Directory</h3>
+            <form method="post">
+                <label for="directory">Directory path</label>
+                <input
+                    type="text"
+                    id="directory"
+                    name="directory"
+                    placeholder="C:\path\to\folder"
+                >
+
+                <div class="button-row">
+                    <button type="submit" name="action" value="index_local">
+                        Index Local Files
+                    </button>
+
+                    <button type="submit" name="action" value="force_index_local" class="secondary-btn">
+                        Force Re-index This Folder
+                    </button>
+                </div>
+
+                <p class="form-note">
+                    Normal indexing blocks duplicate folders. Force re-index refreshes this folder and removes stale indexed files from it.
+                </p>
+            </form>
+        </div>
+
+        <div class="admin-card">
+            <h3>Index Web Pages</h3>
+            <form method="post">
+                <input type="hidden" name="action" value="index_web">
+                <label for="urls">URLs (space separated)</label>
+                <textarea
+                    id="urls"
+                    name="urls"
+                    rows="4"
+                    placeholder="https://example.com https://python.org"
+                ></textarea>
+                <button type="submit">Index Web URLs</button>
+            </form>
+        </div>
+
+        <div class="admin-card">
+            <h3>Document Info</h3>
+            <form method="post">
+                <input type="hidden" name="action" value="doc_info">
+                <label for="doc_id">Document ID</label>
+                <input
+                    type="number"
+                    id="doc_id"
+                    name="doc_id"
+                    min="0"
+                    placeholder="0"
+                >
+                <label for="top_n">Top terms</label>
+                <input
+                    type="number"
+                    id="top_n"
+                    name="top_n"
+                    min="1"
+                    max="50"
+                    value="10"
+                >
+                <button type="submit">Get Document Info</button>
+            </form>
+        </div>
+
+        <div class="admin-card">
+            <h3>Term Info</h3>
+            <form method="post">
+                <input type="hidden" name="action" value="term_info">
+                <label for="term">Term</label>
+                <input
+                    type="text"
+                    id="term"
+                    name="term"
+                    placeholder="ranking"
+                >
+                <button type="submit">Get Term Info</button>
+            </form>
+        </div>
+
+        <div class="admin-card danger-card">
+            <h3>Reset Index</h3>
+            <form method="post">
+                <input type="hidden" name="action" value="reset_index">
+                <p>Delete the current saved index and clear all indexed content.</p>
+                <button type="submit" class="danger-btn">Reset Index</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+{% if doc_info %}
+<section class="info-shell">
+    <h2>Document Info</h2>
+    <div class="info-card">
+        <div class="info-grid">
+            <div><strong>Document ID:</strong> {{ doc_info.doc_id }}</div>
+            <div><strong>Source type:</strong> {{ doc_info.source_type }}</div>
+            <div><strong>Raw word count:</strong> {{ doc_info.raw_word_count }}</div>
+            <div><strong>Processed token count:</strong> {{ doc_info.processed_token_count }}</div>
+            <div><strong>Unique terms:</strong> {{ doc_info.unique_term_count }}</div>
+        </div>
+
+        <p class="info-path"><strong>Path:</strong> {{ doc_info.path }}</p>
+
+        {% if doc_info.top_terms %}
+            <div class="mini-section">
+                <h3>Top terms</h3>
+                <ul class="clean-list">
+                    {% for term, count in doc_info.top_terms %}
+                        <li>{{ term }}: {{ count }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if doc_info.focus_summary %}
+            <div class="mini-section">
+                <h3>Focus summary</h3>
+                <p>{{ doc_info.focus_summary }}</p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+{% if term_info %}
+<section class="info-shell">
+    <h2>Term Info</h2>
+    <div class="info-card">
+        <div class="info-grid">
+            <div><strong>Normalized term:</strong> {{ term_info.normalized_term }}</div>
+            <div><strong>Document frequency:</strong> {{ term_info.document_frequency }}</div>
+            <div><strong>Total occurrences:</strong> {{ term_info.total_occurrences }}</div>
+        </div>
+
+        {% if term_info.per_document %}
+            <div class="mini-section">
+                <h3>Per-document occurrences</h3>
+                <ul class="clean-list">
+                    {% for path, count in term_info.per_document %}
+                        <li>{{ path }}: {{ count }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}

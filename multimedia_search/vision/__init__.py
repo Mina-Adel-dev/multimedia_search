@@ -1,0 +1,1 @@
+"""Vision helpers for multimedia_search."""
