@@ -1,7 +1,7 @@
 # Multimedia Search Engine
 
 <p align="center">
-  <img src="docs/ir.png" alt="Multimedia Search Engine Flask Website" width="900">
+  <img src="multimedia_search/ir.png" alt="Multimedia Search Engine Flask Website" width="900">
 </p>
 
 <p align="center">
