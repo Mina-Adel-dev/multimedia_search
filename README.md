@@ -227,13 +227,7 @@ $env:SHAZAM_APP_PORT = "5001"
 | Student 3 | Arwa Ali |
 | Student 4 | Nour el weli |
 | Student 5 | Malak mahdy |
-
-
 | Supervisor | Dr  Wafaa & Dr Rokhia|
 
 
-## License
 
-This project is prepared for academic and educational purposes as part of a university graduation project.
-
-If the project will be published publicly, add an appropriate license file such as `LICENSE` and update this section with the selected license terms.
