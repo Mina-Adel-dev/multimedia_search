@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Multimedia Search Engine{% endblock %}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    {% if message %}
+    <div
+        id="toast-popup"
+        class="toast-popup toast-{{ message_type or 'success' }}"
+        role="status"
+        aria-live="polite"
+    >
+        <div class="toast-icon">
+            {% if message_type == "error" %}
+                ⚠️
+            {% elif message_type == "warning" %}
+                ⚠️
+            {% else %}
+                ✅
+            {% endif %}
+        </div>
+
+        <div class="toast-content">
+            <strong>
+                {% if message_type == "error" %}
+                    Action failed
+                {% elif message_type == "warning" %}
+                    Already indexed
+                {% else %}
+                    Success
+                {% endif %}
+            </strong>
+            <span>{{ message }}</span>
+        </div>
+
+        <button type="button" class="toast-close" aria-label="Close popup">×</button>
+    </div>
+    {% endif %}
+
+    <div class="site-shell">
+        <header class="site-header">
+            <div class="site-header-inner">
+                <a href="/" class="brand" aria-label="Go to home page">
+                    <div class="brand-mark">MS</div>
+                    <div class="brand-text">
+                        <span class="brand-title">Multimedia Search Engine</span>
+                        <span class="brand-subtitle">Local files, web pages, and image metadata</span>
+                    </div>
+                </a>
+
+                <div class="header-actions">
+                    <div class="header-badge">
+                        Prototype • Ranked, phrase, Boolean, analytics
+                    </div>
+                    <a
+                        href="{{ shazam_app_url }}"
+                        class="header-shazam-link"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Open Shazam
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <main class="site-main">
+            <div class="page-shell">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+
+        <footer class="site-footer">
+            <div class="site-footer-inner">
+                <div class="footer-note">
+                    <strong>Multimedia Search Engine</strong> — modular IR prototype with local, web, and image metadata retrieval.
+                </div>
+                <div class="footer-meta">
+                    Built with Flask and Python
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/autocomplete.js') }}" defer></script>
+</body>
+</html>

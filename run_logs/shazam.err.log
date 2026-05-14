@@ -1,0 +1,60 @@
+2026-05-14 23:53:38,253 | INFO | Indexing 65 file(s) from D:\Music\new (recursive=True) ...
+Note: Illegal Audio-MPEG-Header 0x00000000 at offset 4.
+Note: Trying to resync...
+Note: Hit end of (available) data during resync.
+D:\FINAL Project\inttShazamll\Shazamll\app.py:1915: FutureWarning: PySoundFile failed. Trying audioread instead.
+	Audioread support is deprecated in librosa 0.10.0 and will be removed in version 1.0.
+  dur = float(librosa.get_duration(path=str(file_path)))
+Note: Illegal Audio-MPEG-Header 0x00000000 at offset 4.
+Note: Trying to resync...
+Note: Hit end of (available) data during resync.
+D:\FINAL Project\inttShazamll\Shazamll\app.py:1535: UserWarning: PySoundFile failed. Trying audioread instead.
+  waveform, _ = librosa.load(
+C:\Users\minaa\AppData\Roaming\Python\Python312\site-packages\librosa\core\audio.py:184: FutureWarning: librosa.core.audio.__audioread_load
+	Deprecated as of librosa version 0.10.0.
+	It will be removed in librosa version 1.0.
+  y, sr_native = __audioread_load(path, offset, duration, dtype)
+2026-05-14 23:53:40,582 | WARNING | Skipped D:\Music\new\_NSYNC - Bye Bye Bye (Lyrics) (Deadpool 3 Soundtrack)(MP3_160K).mp3: Cannot decode '.mp3' on this machine. FFmpeg decode failed for _NSYNC - Bye Bye Bye (Lyrics) (Deadpool 3 Soundtrack)(MP3_160K).mp3: [mp3 @ 000001d69ceff140] Failed to find two consecutive MPEG audio frames.
+[in#0 @ 000001d69cefee40] Error opening input: Invalid data found when processing input
+Error opening input file D:\Music\new\_NSYNC - Bye Bye Bye (Lyrics) (Deadpool 3 Soundtrack)(MP3_160K).mp3.
+Error opening input files: Invalid data found when processing input
+2026-05-14 23:53:40,689 | INFO | Index complete | indexed=64 failed=1 lyrics=1 cache_hits=64 duration=2.49s
+2026-05-14 23:53:43,507 | INFO | Startup index ready | source=D:\Music\new indexed=64 scanned=65 failed=1
+2026-05-14 23:53:43,577 | INFO | Open app on this single URL: https://0.0.0.0:5001
+2026-05-14 23:53:44,081 | INFO | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on https://127.0.0.1:5001
+ * Running on https://192.168.1.124:5001
+2026-05-14 23:53:44,081 | INFO | [33mPress CTRL+C to quit[0m
+2026-05-14 23:54:09,760 | INFO | 192.168.1.124 - - [14/May/2026 23:54:09] "GET / HTTP/1.1" 200 -
+2026-05-14 23:54:09,764 | INFO | 127.0.0.1 - - [14/May/2026 23:54:09] "GET / HTTP/1.1" 200 -
+2026-05-14 23:54:54,667 | INFO | 127.0.0.1 - - [14/May/2026 23:54:54] "GET / HTTP/1.1" 200 -
+2026-05-14 23:54:54,873 | INFO | 127.0.0.1 - - [14/May/2026 23:54:54] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+C:\Users\minaa\AppData\Roaming\Python\Python312\site-packages\pydub\utils.py:170: RuntimeWarning: Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work
+  warn("Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work", RuntimeWarning)
+2026-05-14 23:55:17,141 | INFO | Initializing shazamio_core module
+2026-05-14 23:55:17,148 | INFO | shazamio_core module initialized successfully
+2026-05-14 23:55:17,210 | INFO | Recognizer created with segment_duration_seconds = 10
+2026-05-14 23:55:18,221 | INFO | 127.0.0.1 - - [14/May/2026 23:55:18] "[31m[1mPOST /api/detect HTTP/1.1[0m" 400 -
+D:\FINAL Project\inttShazamll\Shazamll\app.py:1535: UserWarning: PySoundFile failed. Trying audioread instead.
+  waveform, _ = librosa.load(
+C:\Users\minaa\AppData\Roaming\Python\Python312\site-packages\librosa\core\audio.py:184: FutureWarning: librosa.core.audio.__audioread_load
+	Deprecated as of librosa version 0.10.0.
+	It will be removed in librosa version 1.0.
+  y, sr_native = __audioread_load(path, offset, duration, dtype)
+2026-05-14 23:55:23,937 | INFO | Recognizer created with segment_duration_seconds = 10
+2026-05-14 23:55:25,150 | INFO | Recognizer created with segment_duration_seconds = 10
+2026-05-14 23:55:29,840 | INFO | Recognizer created with segment_duration_seconds = 10
+2026-05-14 23:55:31,203 | INFO | 127.0.0.1 - - [14/May/2026 23:55:31] "[31m[1mPOST /api/detect HTTP/1.1[0m" 400 -
+2026-05-14 23:55:49,246 | INFO | 127.0.0.1 - - [14/May/2026 23:55:49] "POST /api/detect HTTP/1.1" 200 -
+2026-05-14 23:55:49,277 | INFO | Lyrics lookup | original=Al Shami - Ya Leil W Yal Ein [Official Music Video] (2023) _ الشامي - يا ليل ويالعين(MP3_160K).mp3 cleaned_song_title=Al Shami - Ya Leil W Yal Ein الشامي - يا ليل ويالعين artist= title=الشامي يا ليل ويالعين variants=['Al Shami - Ya Leil W Yal Ein', 'الشامي يا ليل ويالعين', 'al shami ya leil yal ein الشامي يا ليل ويالعين', 'Al Shami - Ya Leil W Yal Ein الشامي - يا ليل ويالعين']
+2026-05-14 23:55:49,370 | INFO | Lyrics API request | provider=ytmusic query=Al Shami - Ya Leil W Yal Ein
+2026-05-14 23:55:51,181 | INFO | Lyrics API response | provider=ytmusic query=Al Shami - Ya Leil W Yal Ein items=20
+2026-05-14 23:55:51,205 | INFO | Lyrics API request | provider=ytmusic query=الشامي يا ليل ويالعين
+2026-05-14 23:55:51,900 | INFO | Lyrics API response | provider=ytmusic query=الشامي يا ليل ويالعين items=20
+2026-05-14 23:55:51,937 | INFO | Lyrics API request | provider=ytmusic query=al shami ya leil yal ein الشامي يا ليل ويالعين
+2026-05-14 23:55:54,195 | INFO | Lyrics API response | provider=ytmusic query=al shami ya leil yal ein الشامي يا ليل ويالعين items=20
+2026-05-14 23:55:57,321 | INFO | Lyrics API response | provider=ytmusic_lyrics video_id=chAwfGsDKJg has_lyrics=True preview=يا ضي القمر عودي تمردي على القضبان يا ضي العمر جودي واللي جادوا فيني قلال يا ليل ويا العين من بعدك عمر ما هوينا عمر يا العيد يأتيني بنظرة زوينة يا ليل ويا العين من بعدك عمر ما هوينا عمر يا العيد يأتيني بنظرة زوينة وبعد-عد-عد، يا ليل ويا العين من بعدك عمر ما هوينا (وبعد-عد-عد) عمر يا العيد يأتيني بنظرة زوينة (وبعد-عد-عد) يا ليل ويا العين من بعدك عمر ما هوينا عمر يا العيد يأتيني بنظرة زوينة ع الهون عيونك تروي العيون من اليوم طريقك أبيض اللون، أمان ع الهون عيونك تروي العيون، أمان من اليوم طريقك أبيض اللون، آه من اليوم لارمي عداكي بلوم لو رادوا حرب والله لأشعلهم ومن اليوم لارمي عداكي بلوم لو ارادو ...
+2026-05-14 23:55:57,326 | INFO | 127.0.0.1 - - [14/May/2026 23:55:57] "GET /api/lyrics?song=Al%20Shami%20-%20Ya%20Leil%20W%20Yal%20Ein%20[Official%20Music%20Video]%20(2023)%20_%20الشامي%20-%20يا%20ليل%20ويالعين(MP3_160K).mp3 HTTP/1.1" 200 -
+2026-05-15 00:19:31,163 | INFO | 127.0.0.1 - - [15/May/2026 00:19:31] "GET / HTTP/1.1" 200 -
+2026-05-15 00:21:22,625 | INFO | 127.0.0.1 - - [15/May/2026 00:21:22] "GET / HTTP/1.1" 200 -

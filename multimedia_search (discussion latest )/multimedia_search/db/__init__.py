@@ -1,0 +1,1 @@
+"""SQLite database helpers for the multimedia search engine."""

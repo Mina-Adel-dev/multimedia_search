@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shazam-Style Detector</title>
+  <style>
+    :root {
+      --bg-1: #03112a;
+      --bg-2: #0a2b68;
+      --bg-3: #0d4eb6;
+      --text: #eaf5ff;
+      --muted: #b8d6ff;
+      --line: rgba(255, 255, 255, 0.22);
+      --panel: rgba(255, 255, 255, 0.10);
+      --panel-2: rgba(255, 255, 255, 0.14);
+      --good: rgba(46, 204, 113, 0.22);
+      --bad: rgba(231, 76, 60, 0.24);
+      --btn-a: #26b7ff;
+      --btn-b: #0b62d8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "Bahnschrift", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(94, 226, 255, 0.16), transparent 36%),
+        radial-gradient(circle at 88% 85%, rgba(35, 163, 255, 0.16), transparent 34%),
+        linear-gradient(140deg, var(--bg-1), var(--bg-2) 52%, var(--bg-3));
+      min-height: 100vh;
+      padding: 16px 10px 22px;
+    }
+
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      display: grid;
+      gap: 12px;
+    }
+
+    .glass {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 16px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
+      padding: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.55rem;
+      letter-spacing: 0.4px;
+    }
+
+    .sub {
+      margin: 5px 0 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .meta {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .stats-grid {
+      margin-top: 10px;
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+
+    .stat-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .stat-k {
+      color: #b8d8ff;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.55px;
+      font-weight: 700;
+    }
+
+    .stat-v {
+      margin-top: 3px;
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 28px 14px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.03));
+      border-radius: 18px;
+      border: 1px solid var(--line);
+    }
+
+    .rings {
+      width: 250px;
+      height: 250px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid rgba(94, 226, 255, 0.36);
+      animation: pulse 2.7s infinite ease-out;
+      transform: scale(0.72);
+      opacity: 0;
+    }
+
+    .ring:nth-child(2) { animation-delay: 0.9s; }
+    .ring:nth-child(3) { animation-delay: 1.8s; }
+
+    @keyframes pulse {
+      0% { transform: scale(0.72); opacity: 0; }
+      25% { opacity: 0.88; }
+      100% { transform: scale(1.54); opacity: 0; }
+    }
+
+    .detect-btn {
+      width: 156px;
+      height: 156px;
+      border-radius: 50%;
+      border: none;
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      cursor: pointer;
+      color: #fff;
+      font-size: 1.08rem;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      background: radial-gradient(circle at 30% 24%, #6ef3ff 0%, var(--btn-a) 36%, var(--btn-b) 76%);
+      box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.16), 0 12px 28px rgba(0, 0, 0, 0.42);
+      transition: transform 0.2s ease;
+    }
+
+    .detect-btn:hover { transform: scale(1.03); }
+    .detect-btn.recording {
+      box-shadow: 0 0 0 8px rgba(255, 80, 80, 0.20), 0 0 30px rgba(255, 80, 80, 0.45);
+      background: radial-gradient(circle at 30% 24%, #ffb5b8 0%, #ff6d76 45%, #d62145 100%);
+    }
+
+    .status {
+      margin-top: 14px;
+      font-weight: 700;
+      color: #e7f5ff;
+    }
+
+    .controls {
+      margin-top: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .controls input {
+      width: 76px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 6px 8px;
+      background: rgba(0, 0, 0, 0.24);
+      color: var(--text);
+      text-align: center;
+    }
+
+    .result-box {
+      margin-top: 12px;
+      border-radius: 12px;
+      padding: 11px;
+      border: 1px solid var(--line);
+      background: rgba(0, 0, 0, 0.22);
+    }
+
+    .result-box.good { background: var(--good); }
+    .result-box.bad { background: var(--bad); }
+
+    .result-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    .confidence {
+      margin-top: 8px;
+      display: inline-block;
+      padding: 4px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(0, 0, 0, 0.24);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .table-wrap {
+      margin-top: 10px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      text-transform: uppercase;
+      letter-spacing: 0.55px;
+      font-size: 0.82rem;
+      color: #d6ebff;
+      font-weight: 800;
+    }
+
+    audio {
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    pre {
+      margin: 10px 0 0;
+      white-space: pre-wrap;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.24);
+      padding: 10px;
+      max-height: 220px;
+      overflow: auto;
+      color: #dbedff;
+      font-size: 0.9rem;
+    }
+
+    .lyrics-actions {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .lyrics-btn {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 7px 10px;
+      cursor: pointer;
+      color: #e7f3ff;
+      background: rgba(0, 0, 0, 0.25);
+      font-weight: 700;
+    }
+
+    .tools {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 860px) {
+      .tools {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .tool {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      background: var(--panel-2);
+    }
+
+    .tool h3 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+    }
+
+    label {
+      display: block;
+      margin: 8px 0 4px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #def2ff;
+    }
+
+    input[type="text"], input[type="number"], input[type="file"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: rgba(0, 0, 0, 0.26);
+      color: var(--text);
+    }
+
+    .btn {
+      margin-top: 10px;
+      border: none;
+      border-radius: 9px;
+      padding: 9px 12px;
+      cursor: pointer;
+      font-weight: 800;
+      color: white;
+      background: linear-gradient(120deg, #00abff, #0d67d5);
+    }
+
+    .hint {
+      margin-top: 8px;
+      color: #cae6ff;
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .metrics {
+      margin-top: 10px;
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .metric .k {
+      color: #b8d8ff;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.55px;
+      font-weight: 700;
+    }
+
+    .metric .v {
+      margin-top: 3px;
+      font-size: 0.96rem;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="glass">
+      <h1>Shazam-Style Song Detector</h1>
+      <p class="sub">
+        One page only: live detect + index + upload + results.
+        Tap To Detect uses microphone listening only.
+      </p>
+      <div class="meta">
+        Source: <strong>{{ source_dir }}</strong><br />
+        Mode: <strong>{{ "recursive" if recursive else "non-recursive" }}</strong>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-k">Indexed Songs</div><div class="stat-v">{{ song_count }}</div></div>
+        <div class="stat-card"><div class="stat-k">Scanned Files</div><div class="stat-v">{{ index_stats.scanned_files }}</div></div>
+        <div class="stat-card"><div class="stat-k">Failed Files</div><div class="stat-v">{{ index_stats.failed_files }}</div></div>
+        <div class="stat-card"><div class="stat-k">Cache Hits</div><div class="stat-v">{{ index_stats.cache_hits or 0 }}</div></div>
+        <div class="stat-card"><div class="stat-k">Last Scan (s)</div><div class="stat-v">{{ index_stats.duration_sec }}</div></div>
+      </div>
+      {% if index_stats.last_error %}
+        <div class="hint" style="color:#ffd8d8;">Last indexing issue: {{ index_stats.last_error }}</div>
+      {% endif %}
+      <div class="hint">Phone + laptop: open this same page from the laptop-host URL and tap detect. Keep both on same Wi‑Fi.</div>
+    </section>
+
+    <section class="glass hero">
+      <div class="rings">
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <button id="micDetectBtn" class="detect-btn" type="button">Tap To<br>Detect</button>
+      </div>
+      <div id="liveStatus" class="status">Ready. First detection pass starts after 6 seconds.</div>
+      <div class="controls">
+        <span>Top-K</span>
+        <input id="liveTopK" type="number" min="1" max="10" value="5" />
+        <span>Seconds</span>
+        <input id="liveDuration" type="number" min="6" max="45" value="15" />
+      </div>
+      <div id="liveResult"></div>
+    </section>
+
+    {% if message %}
+      <section class="glass">
+        <div class="result-box {{ 'bad' if is_error else 'good' }}">
+          <p class="result-title">{{ message }}</p>
+          {% if confidence is not none %}
+            <span class="confidence">confidence={{ "%.2f"|format(confidence) }} ({{ confidence_label }})</span>
+          {% endif %}
+          {% if lyrics_source %}
+            <span class="confidence">lyrics={{ lyrics_source }}</span>
+          {% endif %}
+          {% if detected_audio_url %}
+            <audio controls preload="none" src="{{ detected_audio_url }}"></audio>
+          {% endif %}
+        </div>
+        {% if innovation %}
+          <div class="metrics">
+            {% for k, v in innovation.items() %}
+              <div class="metric">
+                <div class="k">{{ k }}</div>
+                <div class="v">{{ v }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% if top_matches %}
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>#</th><th>Song</th><th>Score</th><th>Global</th><th>Segment</th><th>DTW</th><th>Peak</th><th>Match At</th></tr>
+              </thead>
+              <tbody>
+                {% for m in top_matches %}
+                  <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ m.song }}</td>
+                    <td>{{ "%.4f"|format(m.score) }}</td>
+                    <td>{{ "%.4f"|format(m.global_score) }}</td>
+                    <td>{{ "%.4f"|format(m.segment_score) }}</td>
+                    <td>{{ "%.4f"|format(m.dtw_score or 0) }}</td>
+                    <td>{{ "%.4f"|format(m.peak_similarity) }}</td>
+                    <td>{{ m.match_mmss }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+        {% if lyrics_preview %}
+          <pre>{{ lyrics_preview }}</pre>
+          {% if detected_song %}
+            <div class="lyrics-actions">
+              <button class="lyrics-btn" type="button" data-song="{{ detected_song }}" id="lyricsRefreshBtn">
+                Refresh Lyrics From Web
+              </button>
+            </div>
+          {% endif %}
+        {% endif %}
+      </section>
+    {% endif %}
+
+    <section class="glass tools">
+      <div class="tool">
+        <h3>Index Source</h3>
+        <form method="post">
+          <input type="hidden" name="action" value="reindex" />
+          <label for="source_dir">Source folder path</label>
+          <input id="source_dir" name="source_dir" type="text" value="{{ source_dir }}" required />
+          <label><input id="recursive" name="recursive" type="checkbox" {% if recursive %}checked{% endif %} /> Recursive scan</label>
+          <button class="btn" type="submit">Rebuild Index</button>
+        </form>
+      </div>
+
+      <div class="tool">
+        <h3>Manual Upload (Fallback)</h3>
+        <form method="post" enctype="multipart/form-data">
+          <input type="hidden" name="action" value="detect_upload" />
+          <label for="audio_file">Upload audio file</label>
+          <input id="audio_file" name="audio_file" type="file" accept=".mp3,.wav,.flac,.ogg,.m4a,.webm,.mp4,.aac" required />
+          <label for="top_k_upload">Top-K</label>
+          <input id="top_k_upload" name="top_k" type="number" min="1" max="10" value="5" />
+          <button class="btn" type="submit">Detect From Upload</button>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      const micBtn = document.getElementById("micDetectBtn");
+      const statusEl = document.getElementById("liveStatus");
+      const resultEl = document.getElementById("liveResult");
+      const topKEl = document.getElementById("liveTopK");
+      const durationEl = document.getElementById("liveDuration");
+      let busy = false;
+      let currentDetectedSong = "";
+      const firstDetectionPassSeconds = 6;
+      const detectionRetrySeconds = 4;
+
+      function setStatus(text) {
+        if (statusEl) statusEl.textContent = text;
+      }
+
+      function esc(text) {
+        return String(text || "").replace(/</g, "&lt;");
+      }
+
+      function attrEsc(text) {
+        return String(text || "")
+          .replace(/&/g, "&amp;")
+          .replace(/"/g, "&quot;")
+          .replace(/</g, "&lt;");
+      }
+
+      function renderResult(data, isError) {
+        if (!resultEl) return;
+        if (isError) {
+          currentDetectedSong = "";
+          resultEl.innerHTML = `
+            <div class="result-box bad">
+              <p class="result-title">${esc(data.error || "Detection failed.")}</p>
+            </div>`;
+          return;
+        }
+
+        currentDetectedSong = data.best_song || "";
+
+        const rows = (data.top_matches || []).map((item, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${esc(item.song)}</td>
+            <td>${Number(item.score).toFixed(4)}</td>
+            <td>${Number(item.global_score).toFixed(4)}</td>
+            <td>${Number(item.segment_score).toFixed(4)}</td>
+            <td>${Number(item.dtw_score || 0).toFixed(4)}</td>
+            <td>${Number(item.peak_similarity || 0).toFixed(4)}</td>
+            <td>${esc(item.match_mmss || "--:--")}</td>
+          </tr>
+        `).join("");
+
+        const audio = data.detected_audio_url ? `<audio controls preload="none" src="${data.detected_audio_url}"></audio>` : "";
+        const lyrics = data.lyrics_preview ? `<pre>${esc(data.lyrics_preview)}</pre>` : "";
+        const lyricsSourceChip = data.lyrics_source ? `<span class="confidence">lyrics=${esc(data.lyrics_source)}</span>` : "";
+
+        const inv = data.innovation || {};
+        const queryMeta = inv.query_meta || {};
+        const matchMeta = inv.match_meta || {};
+        const metrics = [
+          ["match_at", inv.match_at_mmss],
+          ["latency_ms", inv.latency_ms],
+          ["query_tempo", queryMeta.tempo_bpm],
+          ["query_key", queryMeta.key_label],
+          ["query_energy", queryMeta.energy],
+          ["match_tempo", matchMeta.tempo_bpm],
+          ["match_key", matchMeta.key_label],
+          ["match_energy", matchMeta.energy],
+          ["tempo_diff", inv.tempo_diff],
+          ["energy_diff", inv.energy_diff],
+          ["exact_file_match", inv.exact_file_match],
+          ["used_external_fallback", inv.used_external_fallback],
+        ].filter((x) => x[1] !== undefined && x[1] !== null && x[1] !== "");
+
+        const metricsHtml = metrics.length
+          ? `<div class="metrics">${metrics.map(([k,v]) => `
+              <div class="metric">
+                <div class="k">${esc(k)}</div>
+                <div class="v">${esc(v)}</div>
+              </div>`).join("")}</div>`
+          : "";
+        const lyricsButton = currentDetectedSong
+          ? `<div class="lyrics-actions"><button class="lyrics-btn" type="button" id="lyricsRefreshBtn" data-song="${attrEsc(currentDetectedSong)}">Refresh Lyrics From Web</button></div>`
+          : "";
+
+        resultEl.innerHTML = `
+          <div class="result-box good">
+            <p class="result-title">${esc(data.message)}</p>
+            <span class="confidence">confidence=${Number(data.confidence).toFixed(2)} (${esc(data.confidence_label)})</span>
+            ${lyricsSourceChip}
+            ${audio}
+          </div>
+          ${metricsHtml}
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Song</th><th>Score</th><th>Global</th><th>Segment</th><th>DTW</th><th>Peak</th><th>Match At</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+          ${lyrics}
+          ${lyricsButton}
+        `;
+        bindLyricsButton();
+        if ((!data.lyrics_preview || String(data.lyrics_preview).trim().length < 80) && currentDetectedSong) {
+          refreshLyricsFromWeb(currentDetectedSong);
+        }
+      }
+
+      async function refreshLyricsFromWeb(songName) {
+        if (!songName) return;
+        const btn = document.getElementById("lyricsRefreshBtn");
+        if (btn) btn.disabled = true;
+        try {
+          setStatus("Fetching lyrics from web...");
+          const url = `/api/lyrics?song=${encodeURIComponent(songName)}`;
+          const resp = await fetch(url);
+          const data = await resp.json();
+          if (!resp.ok || !data.ok) {
+            throw new Error(data.error || "Lyrics fetch failed.");
+          }
+          const pre = resultEl ? resultEl.querySelector("pre") : null;
+          const block = `<pre>${esc(data.lyrics || "")}</pre>`;
+          if (pre) {
+            pre.outerHTML = block;
+          } else if (resultEl) {
+            resultEl.insertAdjacentHTML("beforeend", block);
+          }
+          setStatus(`Lyrics updated (${data.source}).`);
+        } catch (err) {
+          const message = err && err.message ? err.message : "Lyrics not found";
+          const pre = resultEl ? resultEl.querySelector("pre") : null;
+          const block = `<pre>${esc(message)}</pre>`;
+          if (pre) {
+            pre.outerHTML = block;
+          } else if (resultEl) {
+            resultEl.insertAdjacentHTML("beforeend", block);
+          }
+          setStatus(message);
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      }
+
+      function bindLyricsButton() {
+        const btn = document.getElementById("lyricsRefreshBtn");
+        if (!btn) return;
+        btn.onclick = async () => {
+          const song = btn.getAttribute("data-song") || currentDetectedSong;
+          await refreshLyricsFromWeb(song);
+        };
+      }
+
+      function detectExtension(mimeType) {
+        const m = (mimeType || "").toLowerCase();
+        if (m.includes("webm")) return "webm";
+        if (m.includes("mp4")) return "mp4";
+        if (m.includes("aac")) return "aac";
+        if (m.includes("mpeg")) return "mp3";
+        if (m.includes("ogg")) return "ogg";
+        if (m.includes("wav")) return "wav";
+        if (m.includes("m4a")) return "m4a";
+        return "webm";
+      }
+
+      function wait(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      async function requestDetection(blob, suggestedExt) {
+        const ext = suggestedExt || detectExtension(blob.type);
+        const topK = Math.max(1, Math.min(10, Number(topKEl.value || 5)));
+
+        const form = new FormData();
+        form.append("audio_file", new File([blob], `capture.${ext}`, { type: blob.type || "audio/webm" }));
+        form.append("top_k", String(topK));
+        form.append("capture_mode", "live");
+
+        const resp = await fetch("/api/detect", { method: "POST", body: form });
+        const data = await resp.json();
+        return { ok: Boolean(resp.ok && data.ok), data };
+      }
+
+      async function flushRecorderData(recorder) {
+        if (!recorder || recorder.state !== "recording") return;
+        try { recorder.requestData(); } catch (_) {}
+        await wait(180);
+      }
+
+      function supportsLiveRecorder() {
+        return Boolean(
+          navigator.mediaDevices &&
+          navigator.mediaDevices.getUserMedia &&
+          window.MediaRecorder
+        );
+      }
+
+      async function detectWithLiveRecorder() {
+        let stream = null;
+        try {
+          setStatus("Requesting microphone access...");
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: false,
+              noiseSuppression: false,
+              autoGainControl: false,
+              channelCount: 1,
+            }
+          });
+
+          const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/aac"];
+          let mimeType = "";
+          for (const c of candidates) {
+            if (MediaRecorder.isTypeSupported(c)) { mimeType = c; break; }
+          }
+          const recorderOptions = { audioBitsPerSecond: 192000 };
+          if (mimeType) recorderOptions.mimeType = mimeType;
+          let recorder = null;
+          try {
+            recorder = new MediaRecorder(stream, recorderOptions);
+          } catch (_) {
+            recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+          }
+          const chunks = [];
+          recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+
+          const stopped = new Promise((resolve, reject) => {
+            let settled = false;
+            function done(ok, value) {
+              if (settled) return;
+              settled = true;
+              if (ok) {
+                resolve(value);
+              } else {
+                reject(value || new Error("Recorder stopped with error."));
+              }
+            }
+            recorder.onstop = () => done(true);
+            recorder.onerror = (ev) => {
+              const errMsg =
+                (ev && ev.error && ev.error.message) ||
+                (ev && ev.message) ||
+                "MediaRecorder error.";
+              done(false, new Error(errMsg));
+            };
+          });
+
+          const sec = Math.max(6, Math.min(45, Number(durationEl.value || 15)));
+          const firstPass = Math.min(firstDetectionPassSeconds, sec);
+          setStatus(`Listening... first check in ${firstPass}s`);
+          recorder.start(1000);
+          const startedAt = Date.now();
+          const elapsedSeconds = () => (Date.now() - startedAt) / 1000;
+          let nextAttemptAt = firstPass;
+          let lastError = null;
+          let detected = false;
+          let lastAttemptSecond = 0;
+
+          while (!detected && elapsedSeconds() < sec) {
+            const remainingToAttempt = Math.max(0, nextAttemptAt - elapsedSeconds());
+            if (remainingToAttempt > 0) {
+              await wait(Math.min(remainingToAttempt, sec - elapsedSeconds()) * 1000);
+            }
+
+            await flushRecorderData(recorder);
+            if (!chunks.length) {
+              nextAttemptAt = Math.min(sec, elapsedSeconds() + detectionRetrySeconds);
+              continue;
+            }
+
+            const type = mimeType || (chunks[0] && chunks[0].type) || "audio/webm";
+            const attemptSecond = Math.max(1, Math.round(elapsedSeconds()));
+            if (attemptSecond <= lastAttemptSecond) {
+              nextAttemptAt = Math.min(sec, elapsedSeconds() + detectionRetrySeconds);
+              continue;
+            }
+            lastAttemptSecond = attemptSecond;
+
+            setStatus(`Analyzing ${attemptSecond}s sample...`);
+            const blob = new Blob(chunks, { type });
+            const result = await requestDetection(blob, detectExtension(type));
+            if (result.ok) {
+              renderResult(result.data, false);
+              setStatus(`Detected after ${attemptSecond}s.`);
+              detected = true;
+              break;
+            }
+
+            lastError = result.data || { error: "Couldn't detect the song." };
+            if (elapsedSeconds() >= sec) break;
+            const nextWait = Math.min(detectionRetrySeconds, Math.max(1, Math.ceil(sec - elapsedSeconds())));
+            setStatus(`Still listening... next check in ${nextWait}s`);
+            nextAttemptAt = Math.min(sec, elapsedSeconds() + detectionRetrySeconds);
+          }
+
+          if (recorder.state !== "inactive") {
+            try { recorder.requestData(); } catch (_) {}
+            recorder.stop();
+          }
+          await Promise.race([
+            stopped,
+            new Promise((_, reject) => {
+              setTimeout(() => reject(new Error("Recorder stop timeout.")), 8000);
+            }),
+          ]);
+
+          stream.getTracks().forEach((t) => t.stop());
+          if (!chunks.length) {
+            throw new Error("No audio data captured. Try again and allow microphone.");
+          }
+          if (!detected) {
+            setStatus("Analyzing final recording...");
+            const type = mimeType || (chunks[0] && chunks[0].type) || "audio/webm";
+            const finalBlob = new Blob(chunks, { type });
+            const finalResult = await requestDetection(finalBlob, detectExtension(type));
+            if (finalResult.ok) {
+              renderResult(finalResult.data, false);
+              setStatus("Detected from final recording.");
+            } else {
+              renderResult(finalResult.data || lastError || { error: "Couldn't detect the song." }, true);
+              setStatus("Detection failed.");
+            }
+          }
+        } catch (err) {
+          if (stream) stream.getTracks().forEach((t) => t.stop());
+          const msg = err && err.message ? err.message : String(err);
+          const secureUrl = window.location.href.replace(/^http:/i, "https:");
+          const maybeInsecure =
+            !window.isSecureContext || /secure|https|origin|notallowed/i.test(String(msg || ""));
+          const finalMsg = maybeInsecure
+            ? `Microphone requires HTTPS in this browser. Open: ${secureUrl}`
+            : msg;
+          renderResult({ error: finalMsg }, true);
+          setStatus("Live recording failed. Use Manual Upload section.");
+        }
+      }
+
+      async function startDetection() {
+        if (busy) return;
+        busy = true;
+        micBtn.classList.add("recording");
+        try {
+          if (supportsLiveRecorder()) {
+            await detectWithLiveRecorder();
+          } else {
+            const secureUrl = window.location.href.replace(/^http:/i, "https:");
+            const msg = window.location.protocol === "http:"
+              ? `Live microphone requires HTTPS. Open: ${secureUrl}`
+              : "Live microphone is unavailable in this browser/session. Use the Manual Upload section only.";
+            renderResult(
+              {
+                error: msg,
+              },
+              true
+            );
+            setStatus("Live microphone unavailable. Use Manual Upload section.");
+          }
+        } finally {
+          busy = false;
+          micBtn.classList.remove("recording");
+        }
+      }
+
+      if (micBtn) {
+        micBtn.addEventListener("click", startDetection);
+      }
+
+      bindLyricsButton();
+    })();
+  </script>
+</body>
+</html>
