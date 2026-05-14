@@ -186,6 +186,10 @@
                     return;
                 }
 
+                if (formElement.dataset.dynamicForm === "1") {
+                    return;
+                }
+
                 if (!submitter.name || !submitter.value) {
                     return;
                 }
@@ -229,6 +233,10 @@
         const forms = document.querySelectorAll("form");
 
         forms.forEach((formElement) => {
+            if (formElement.dataset.dynamicForm === "1") {
+                return;
+            }
+
             formElement.addEventListener("submit", function (event) {
                 const submitButton =
                     event.submitter ||
@@ -290,6 +298,34 @@
         }
 
         window.setTimeout(closeToast, 4500);
+    }
+
+    function setupConfirmDialogs() {
+        document.addEventListener(
+            "submit",
+            function (event) {
+                const formElement = event.target;
+                const submitter = event.submitter;
+
+                if (!formElement || !submitter) {
+                    return;
+                }
+
+                const message = submitter.getAttribute("data-confirm-message");
+
+                if (!message) {
+                    return;
+                }
+
+                const confirmed = window.confirm(message);
+
+                if (!confirmed) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                }
+            },
+            true
+        );
     }
 
     function setupQueryImageInputs() {
@@ -358,24 +394,23 @@
         window.addEventListener("beforeunload", clearPreview);
     }
 
-
     function setupAudioTranscriptToggles() {
         const buttons = document.querySelectorAll(".audio-transcript-toggle");
-    
+
         buttons.forEach((button) => {
             button.addEventListener("click", function () {
                 const block = button.closest(".audio-transcript-block");
-    
+
                 if (!block) {
                     return;
                 }
-    
+
                 const transcript = block.querySelector(".audio-transcript-text");
-    
+
                 if (!transcript) {
                     return;
                 }
-    
+
                 const isHidden = transcript.hidden;
                 transcript.hidden = !isHidden;
                 button.setAttribute("aria-expanded", String(isHidden));
@@ -383,10 +418,411 @@
             });
         });
     }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function getLinesFromTextarea(id) {
+        const textarea = document.getElementById(id);
+
+        if (!textarea) {
+            return [];
+        }
+
+        return textarea.value
+            .split(/\r?\n/)
+            .map((line) => line.trim())
+            .filter(Boolean);
+    }
+
+    function setImportStatus(message, type = "working") {
+        const statusBox = document.getElementById("externalImportStatus");
+
+        if (!statusBox) {
+            return;
+        }
+
+        statusBox.textContent = message;
+        statusBox.className = `web-live-status ${type}`;
+    }
+
+    function renderSimpleImportResult(title, ok, message) {
+        const resultsBox = document.getElementById("externalImportResults");
+
+        if (!resultsBox) {
+            return;
+        }
+
+        const status = ok ? "Imported" : "Failed";
+
+        resultsBox.innerHTML = `
+            <article class="web-live-result">
+                <div class="result-topline">
+                    <span class="result-badge">${escapeHtml(status)}</span>
+                </div>
+                <h3>${escapeHtml(title)}</h3>
+                <p class="result-snippet">${escapeHtml(message || "")}</p>
+            </article>
+        `;
+    }
+
+    function setupExternalImport() {
+        const form = document.getElementById("externalImportForm");
+        const topicsInput = document.getElementById("externalImportTopics");
+        const limitInput = document.getElementById("externalImportLimit");
+        const platformInput = document.getElementById("shortVideoPlatform");
+        const youtubeFeedsInput = document.getElementById("youtubeRssFeeds");
+        const statusBox = document.getElementById("externalImportStatus");
+        const resultsBox = document.getElementById("externalImportResults");
+    
+        if (!form || !topicsInput || !limitInput || !platformInput || !youtubeFeedsInput || !statusBox || !resultsBox) {
+            return;
+        }
+    
+        function getLines(inputElement) {
+            return inputElement.value
+                .split(/\r?\n/)
+                .map((line) => line.trim())
+                .filter(Boolean);
+        }
+    
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+    
+            const topics = getLines(topicsInput);
+            const youtubeRssFeeds = getLines(youtubeFeedsInput);
+            const limit = Number(limitInput.value || 10);
+            const shortVideoPlatform = platformInput.value || "none";
+    
+            if (!topics.length) {
+                statusBox.textContent = "Please enter at least one topic.";
+                statusBox.className = "web-live-status error";
+                return;
+            }
+    
+            if (shortVideoPlatform === "youtube_rss" && youtubeRssFeeds.length === 0) {
+                statusBox.textContent = "Please enter at least one YouTube channel RSS feed URL.";
+                statusBox.className = "web-live-status error";
+                return;
+            }
+    
+            const button = form.querySelector("button[type='submit']");
+            const oldText = button ? button.textContent : "Import Data";
+    
+            if (button) {
+                button.disabled = true;
+                button.textContent = "Importing...";
+            }
+    
+            statusBox.textContent = "Importing documents, images, audio, videos, news, and short-video metadata...";
+            statusBox.className = "web-live-status working";
+            resultsBox.innerHTML = "";
+    
+            try {
+                const response = await fetch("/api/import/smart", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                    },
+                    body: JSON.stringify({
+                        topics: topics,
+                        limit: limit,
+                        short_video_platform: shortVideoPlatform,
+                        youtube_rss_feeds: youtubeRssFeeds,
+                    }),
+                });
+    
+                const payload = await response.json();
+    
+                if (!response.ok || !payload.ok) {
+                    statusBox.textContent = payload.error || payload.message || "Import failed.";
+                    statusBox.className = "web-live-status error";
+                    return;
+                }
+    
+                const details = payload.metadata && payload.metadata.details
+                    ? payload.metadata.details
+                    : [];
+    
+                resultsBox.innerHTML = details.map((item) => {
+                    return `
+                        <article class="web-live-result">
+                            <div class="result-topline">
+                                <span class="result-badge">Imported</span>
+                            </div>
+                            <h3>${escapeHtml(item.topic || "Topic")}</h3>
+                            <p class="result-snippet">
+                                Wikipedia: ${item.wikipedia || 0},
+                                Images: ${item.openverse_images || 0},
+                                Audio: ${item.openverse_audio || 0},
+                                Videos: ${item.internet_archive_videos || 0},
+                                News: ${item.gdelt_news || 0},
+                                Short videos: ${(item.topic_short_videos || 0) + (item.youtube_rss_short_videos || 0)}
+                            </p>
+                        </article>
+                    `;
+                }).join("");
+    
+                statusBox.textContent = `Done. Imported ${payload.imported_count || 0} new item(s). Refresh the page to update stats.`;
+                statusBox.className = "web-live-status success";
+            } catch (error) {
+                statusBox.textContent = `Import failed: ${error.message || error}`;
+                statusBox.className = "web-live-status error";
+            } finally {
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = oldText;
+                }
+            }
+        }, true);
+    }
+
+    function renderExternalImportLogs(logs) {
+        const resultsBox = document.getElementById("externalImportResults");
+
+        if (!resultsBox) {
+            return;
+        }
+
+        resultsBox.innerHTML = logs.map((item) => {
+            const status = item.ok ? "Imported" : "Failed";
+            const count = item.ok ? `${item.imported} item(s)` : escapeHtml(item.error || "");
+
+            return `
+                <article class="web-live-result">
+                    <div class="result-topline">
+                        <span class="result-badge">${escapeHtml(status)}</span>
+                    </div>
+                    <h3>${escapeHtml(item.topic)}</h3>
+                    <p class="result-snippet">${count}</p>
+                </article>
+            `;
+        }).join("");
+    }
+
+    function setupWebUrlImport() {
+        const form = document.getElementById("webUrlImportForm");
+
+        if (!form) {
+            return;
+        }
+
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            const urls = getLinesFromTextarea("webImportUrls");
+
+            if (!urls.length) {
+                setImportStatus("Please enter at least one web URL.", "error");
+                return;
+            }
+
+            const button = form.querySelector("button[type='submit']");
+            const oldText = button ? button.textContent : "Import Web URLs";
+
+            if (button) {
+                button.disabled = true;
+                button.textContent = "Importing...";
+            }
+
+            setImportStatus("Importing web URLs...", "working");
+
+            try {
+                const response = await fetch("/api/index/web", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({ urls: urls })
+                });
+
+                const payload = await response.json();
+
+                if (!response.ok || !payload.ok) {
+                    setImportStatus(payload.error || payload.message || "Web import failed.", "error");
+                    renderSimpleImportResult("Web URL import", false, payload.error || payload.message || "Failed");
+                    return;
+                }
+
+                setImportStatus(`Done. Imported ${payload.indexed_count || 0} web page(s). Refresh the page to update stats.`, "success");
+                renderSimpleImportResult("Web URL import", true, payload.message || "Done.");
+            } catch (error) {
+                setImportStatus(`Web import failed: ${error.message || error}`, "error");
+            } finally {
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = oldText;
+                }
+            }
+        }, true);
+    }
+
+    function setupNewsImport() {
+        const form = document.getElementById("newsImportForm");
+
+        if (!form) {
+            return;
+        }
+
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            const feedUrls = getLinesFromTextarea("newsFeedUrls");
+            const limitInput = document.getElementById("newsImportLimit");
+            const limit = Number(limitInput ? limitInput.value : 10) || 10;
+
+            if (!feedUrls.length) {
+                setImportStatus("Please enter at least one RSS feed URL.", "error");
+                return;
+            }
+
+            const button = form.querySelector("button[type='submit']");
+            const oldText = button ? button.textContent : "Import News";
+
+            if (button) {
+                button.disabled = true;
+                button.textContent = "Importing...";
+            }
+
+            setImportStatus("Importing news RSS...", "working");
+
+            try {
+                const response = await fetch("/api/import/news", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({
+                        feed_urls: feedUrls,
+                        limit: limit
+                    })
+                });
+
+                const payload = await response.json();
+
+                if (!response.ok || !payload.ok) {
+                    setImportStatus(payload.error || payload.message || "News import failed.", "error");
+                    renderSimpleImportResult("News RSS import", false, payload.error || payload.message || "Failed");
+                    return;
+                }
+
+                setImportStatus(`Done. Imported ${payload.imported_count || 0} news article(s). Refresh the page to update stats.`, "success");
+                renderSimpleImportResult("News RSS import", true, payload.message || "Done.");
+            } catch (error) {
+                setImportStatus(`News import failed: ${error.message || error}`, "error");
+            } finally {
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = oldText;
+                }
+            }
+        }, true);
+    }
+
+    function setupShortVideoImport() {
+        const form = document.getElementById("shortVideoImportForm");
+
+        if (!form) {
+            return;
+        }
+
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            const platformInput = document.getElementById("shortVideoPlatform");
+            const jsonInput = document.getElementById("shortVideoItems");
+
+            const platform = platformInput ? platformInput.value.trim() : "";
+            const rawJson = jsonInput ? jsonInput.value.trim() : "";
+
+            if (!rawJson) {
+                setImportStatus("Please paste short-video metadata JSON.", "error");
+                return;
+            }
+
+            let items = [];
+
+            try {
+                const parsed = JSON.parse(rawJson);
+
+                if (Array.isArray(parsed)) {
+                    items = parsed;
+                } else if (parsed && typeof parsed === "object") {
+                    items = [parsed];
+                }
+            } catch (error) {
+                setImportStatus(`Invalid JSON: ${error.message || error}`, "error");
+                return;
+            }
+
+            if (!items.length) {
+                setImportStatus("Short-video JSON must contain at least one item.", "error");
+                return;
+            }
+
+            const button = form.querySelector("button[type='submit']");
+            const oldText = button ? button.textContent : "Import Short Videos";
+
+            if (button) {
+                button.disabled = true;
+                button.textContent = "Importing...";
+            }
+
+            setImportStatus("Importing short-video metadata...", "working");
+
+            try {
+                const response = await fetch("/api/import/short-videos", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({
+                        platform: platform,
+                        items: items
+                    })
+                });
+
+                const payload = await response.json();
+
+                if (!response.ok || !payload.ok) {
+                    setImportStatus(payload.error || payload.message || "Short-video import failed.", "error");
+                    renderSimpleImportResult("Short-video import", false, payload.error || payload.message || "Failed");
+                    return;
+                }
+
+                setImportStatus(`Done. Imported ${payload.imported_count || 0} short-video item(s). Refresh the page to update stats.`, "success");
+                renderSimpleImportResult("Short-video import", true, payload.message || "Done.");
+            } catch (error) {
+                setImportStatus(`Short-video import failed: ${error.message || error}`, "error");
+            } finally {
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = oldText;
+                }
+            }
+        }, true);
+    }
+
     preserveClickedSubmitAction();
     setupAutocomplete();
+    setupConfirmDialogs();
     setupSubmitGuards();
     setupQueryImageInputs();
     setupAudioTranscriptToggles();
     setupToastPopup();
+    setupExternalImport();
 })();

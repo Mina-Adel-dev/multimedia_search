@@ -7,6 +7,7 @@ SUPPORTED_EXTENSIONS = {
     ".txt", ".pdf", ".docx", ".csv", ".json", ".md",
     ".jpg", ".jpeg", ".png", ".webp",
     ".mp3", ".wav", ".m4a", ".ogg", ".webm", ".mp4", ".mpeg", ".mpga", ".flac",
+    ".mp4", ".webm", ".mov", ".mkv", ".avi", ".m4v", ".mpg", ".mpeg", ".wmv",
 }
 
 STOPWORDS = {
@@ -39,6 +40,8 @@ AUDIO_ANALYSIS_MODEL = os.getenv(
 AUDIO_ANALYSIS_ENABLED = True
 AUDIO_CACHE_ENABLED = True
 
+VIDEO_CACHE_ENABLED = True
+VIDEO_TRANSCRIPTION_ENABLED = True
 
 SPELL_SUGGESTION_ENABLED = True
 SPELL_SUGGESTION_CUTOFF = 0.82
@@ -52,5 +55,6 @@ MAX_SYNONYMS_PER_TERM = 3
 USE_STEMMING = False
 
 INDEX_FILE = Path("index.pkl")
+DATABASE_FILE = Path("multimedia_search.sqlite3")
 
 SNIPPET_LENGTH = 150

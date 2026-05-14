@@ -10,6 +10,7 @@ from multimedia_search.parsers.pdf_parser import PDFParser
 from multimedia_search.parsers.text_parser import TextParser
 from multimedia_search.utils.exceptions import UnsupportedFormatError
 from multimedia_search.parsers.audio_parser import AudioParser
+from multimedia_search.parsers.video_parser import VideoParser
 
 
 class ParserFactory:
@@ -36,6 +37,17 @@ class ParserFactory:
         ".mpeg": AudioParser,
         ".mpga": AudioParser,
         ".flac": AudioParser,
+        
+        
+        ".mp4": VideoParser,
+        ".webm": VideoParser,
+        ".mov": VideoParser,
+        ".mkv": VideoParser,
+        ".avi": VideoParser,
+        ".m4v": VideoParser,
+        ".mpg": VideoParser,
+        ".mpeg": VideoParser,
+        ".wmv": VideoParser,
     }
 
     @classmethod

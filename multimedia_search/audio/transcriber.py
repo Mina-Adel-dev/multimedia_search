@@ -136,8 +136,7 @@ def transcribe_audio_file(file_path: Path) -> str:
 def _default_analysis(transcript: str) -> Dict[str, object]:
     """Local fallback analysis when no API key is available.
 
-    This is not as strong as an LLM summary, but it avoids showing
-    a raw transcript dump as the summary.
+    This is a heuristic summary. It avoids using podcast intros/outros as conclusions.
     """
     cleaned = " ".join(str(transcript or "").split())
 
@@ -157,6 +156,7 @@ def _default_analysis(transcript: str) -> Dict[str, object]:
 
     for char in cleaned:
         current.append(char)
+
         if char in ".!?":
             sentence = "".join(current).strip()
             if sentence:
@@ -168,43 +168,162 @@ def _default_analysis(transcript: str) -> Dict[str, object]:
         if leftover:
             sentence_parts.append(leftover)
 
-    meaningful_sentences = [
+    if not sentence_parts:
+        sentence_parts = [cleaned]
+
+    stop_words = {
+        "this", "that", "with", "from", "your", "there", "their",
+        "they", "them", "then", "than", "have", "what", "when",
+        "where", "will", "just", "like", "yeah", "hello", "welcome",
+        "about", "because", "really", "very", "also", "into", "onto",
+        "over", "under", "again", "would", "could", "should", "audio",
+        "transcript", "content", "today", "okay", "right", "well",
+        "good", "easy", "real", "english", "podcast", "website",
+        "worksheet", "version", "learn", "find",
+    }
+
+    outro_phrases = {
+        "we'll be back",
+        "we will be back",
+        "see you next",
+        "next week",
+        "thanks for listening",
+        "thank you for listening",
+        "goodbye",
+        "bye",
+        "subscribe",
+        "follow us",
+        "our website",
+        "worksheet",
+        "transcript to help you learn",
+    }
+
+    intro_phrases = {
+        "hello and welcome",
+        "welcome to",
+        "this podcast",
+        "the podcast where",
+        "there is a video version",
+    }
+
+    def normalize_word(raw_word: str) -> str:
+        return raw_word.strip("'\"()[]{}.,!?;:").lower()
+
+    word_counts: Dict[str, int] = {}
+
+    for raw_word in cleaned.split():
+        word = normalize_word(raw_word)
+
+        if len(word) < 4:
+            continue
+
+        if word in stop_words:
+            continue
+
+        word_counts[word] = word_counts.get(word, 0) + 1
+
+    ranked_words = sorted(
+        word_counts.items(),
+        key=lambda item: (-item[1], item[0]),
+    )
+
+    keywords = [word for word, _count in ranked_words[:8]]
+    keyword_set = set(keywords)
+
+    def is_bad_conclusion_sentence(sentence: str) -> bool:
+        lowered = sentence.lower()
+        return any(phrase in lowered for phrase in outro_phrases)
+
+    def is_intro_sentence(sentence: str) -> bool:
+        lowered = sentence.lower()
+        return any(phrase in lowered for phrase in intro_phrases)
+
+    def sentence_score(sentence: str) -> int:
+        words = [normalize_word(word) for word in sentence.split()]
+        useful_words = [
+            word
+            for word in words
+            if len(word) >= 4 and word not in stop_words
+        ]
+
+        score = 0
+
+        for word in useful_words:
+            if word in keyword_set:
+                score += 3
+            elif word in word_counts:
+                score += 1
+
+        word_len = len(sentence.split())
+
+        if 8 <= word_len <= 35:
+            score += 4
+        elif word_len > 55:
+            score -= 4
+
+        if is_bad_conclusion_sentence(sentence):
+            score -= 20
+
+        if is_intro_sentence(sentence):
+            score -= 8
+
+        return score
+
+    useful_sentences = [
         sentence
         for sentence in sentence_parts
         if len(sentence.split()) >= 5
     ]
 
-    if meaningful_sentences:
-        content_source = " ".join(meaningful_sentences[:2])
-    else:
-        content_source = cleaned
+    if not useful_sentences:
+        useful_sentences = sentence_parts
 
-    if len(content_source) > 260:
-        content_source = content_source[:260].rsplit(" ", 1)[0] + "..."
+    ranked_sentences = sorted(
+        useful_sentences,
+        key=sentence_score,
+        reverse=True,
+    )
 
-    words = []
-    for word in cleaned.replace(".", " ").replace(",", " ").replace("!", " ").replace("?", " ").split():
-        normalized = word.strip("'\"()[]{}").lower()
-        if len(normalized) < 4:
+    best_sentence = ranked_sentences[0].strip() if ranked_sentences else cleaned
+
+    if len(best_sentence) > 240:
+        best_sentence = best_sentence[:240].rsplit(" ", 1)[0] + "..."
+
+    summary_sentences = []
+
+    for sentence in ranked_sentences:
+        if is_bad_conclusion_sentence(sentence):
             continue
-        if normalized in {
-            "this", "that", "with", "from", "your", "there", "their",
-            "they", "them", "then", "than", "have", "what", "when",
-            "where", "will", "just", "like", "yeah",
-        }:
-            continue
-        if normalized not in words:
-            words.append(normalized)
-        if len(words) >= 8:
+
+        if sentence.strip() not in summary_sentences:
+            summary_sentences.append(sentence.strip())
+
+        if len(summary_sentences) >= 2:
             break
 
-    keyword_text = ", ".join(words[:5]) if words else "the audio transcript"
+    if not summary_sentences:
+        summary_sentences = [best_sentence]
+
+    if keywords:
+        keyword_text = ", ".join(keywords[:5])
+    else:
+        keyword_text = "the main topic"
+
+    summary = (
+        f"The audio mainly discusses {keyword_text}. "
+        + " ".join(summary_sentences)
+    )
+
+    conclusion = (
+        f"The main takeaway is that the audio focuses on {keyword_text}, "
+        f"especially this point: {best_sentence}"
+    )
 
     return {
-        "summary": f"The audio content is mainly about: {keyword_text}.",
-        "conclusion": "The transcript was indexed successfully. Use search results and the audio player to review the full context.",
+        "summary": summary,
+        "conclusion": conclusion,
         "action_items": [],
-        "keywords": words,
+        "keywords": keywords,
         "mentioned_people": [],
         "mentioned_places": [],
         "mentioned_organizations": [],

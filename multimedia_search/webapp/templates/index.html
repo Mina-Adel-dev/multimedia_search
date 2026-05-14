@@ -10,7 +10,7 @@
             <span class="hero-blue">S</span><span class="hero-red">e</span><span class="hero-yellow">a</span><span class="hero-blue">r</span><span class="hero-green">c</span><span class="hero-red">h</span>
         </h1>
         <p class="hero-subtitle">
-            Search local files, indexed web pages, images, similar images, and audio transcripts from one search box.
+            Search local files, imported API data, images, videos, short videos, news, similar images, audio, and transcripts from one search box.
         </p>
     </div>
 
@@ -30,13 +30,20 @@
                     id="search-input"
                     name="query"
                     value="{{ query or '' }}"
-                    placeholder="Search documents, web pages, images, and audio..."
+                    placeholder="Search documents, API data, images, videos, short videos, news, and audio..."
                     class="search-input"
                     autocomplete="off"
                     spellcheck="false"
                 >
 
-                <button type="submit" class="search-btn">Search</button>
+                <button
+                    type="submit"
+                    name="media_filter"
+                    value="{{ media_filter or 'all' }}"
+                    class="search-btn"
+                >
+                    Search
+                </button>
             </div>
 
             <div id="autocomplete-box" class="autocomplete-box" hidden>
@@ -58,20 +65,67 @@
                     >
                 </div>
 
-                <label class="image-toggle" for="image_only">
-                    <input
-                        type="checkbox"
-                        id="image_only"
-                        name="image_only"
-                        value="1"
-                        {% if image_only %}checked{% endif %}
+                <div class="media-filter-buttons">
+                    <button
+                        type="submit"
+                        name="media_filter"
+                        value="all"
+                        class="media-filter-btn {% if media_filter == 'all' or not media_filter %}active{% endif %}"
                     >
-                    <span>Images only</span>
-                </label>
+                        All
+                    </button>
+
+                    <button
+                        type="submit"
+                        name="media_filter"
+                        value="image"
+                        class="media-filter-btn {% if media_filter == 'image' %}active{% endif %}"
+                    >
+                        Images
+                    </button>
+
+                    <button
+                        type="submit"
+                        name="media_filter"
+                        value="audio"
+                        class="media-filter-btn {% if media_filter == 'audio' %}active{% endif %}"
+                    >
+                        Audio
+                    </button>
+
+                    <button
+                        type="submit"
+                        name="media_filter"
+                        value="video"
+                        class="media-filter-btn {% if media_filter == 'video' %}active{% endif %}"
+                    >
+                        Video
+                    </button>
+
+                    <button
+                        type="submit"
+                        name="media_filter"
+                        value="short_video"
+                        class="media-filter-btn {% if media_filter == 'short_video' %}active{% endif %}"
+                    >
+                        Short videos
+                    </button>
+
+                    <button
+                        type="submit"
+                        name="media_filter"
+                        value="news_article"
+                        class="media-filter-btn {% if media_filter == 'news_article' %}active{% endif %}"
+                    >
+                        News
+                    </button>
+                </div>
             </div>
 
             <div class="search-toolbar-right">
-                <span class="search-hint">Smart search with autocomplete, phrase, Boolean, image-only filtering, and audio transcript search</span>
+                <span class="search-hint">
+                    Smart search with autocomplete, phrase, Boolean, media filters, audio/video transcript search, short-video metadata, and news search
+                </span>
             </div>
         </div>
     </form>
@@ -93,10 +147,24 @@
             </strong>
         </span>
 
-        {% if image_only %}
-        <span class="feedback-chip feedback-chip-images">
-            Images only
-        </span>
+        {% if media_filter == "image" %}
+        <span class="feedback-chip feedback-chip-images">Images</span>
+        {% endif %}
+
+        {% if media_filter == "audio" %}
+        <span class="feedback-chip feedback-chip-soft">Audio</span>
+        {% endif %}
+
+        {% if media_filter == "video" %}
+        <span class="feedback-chip feedback-chip-soft">Video</span>
+        {% endif %}
+
+        {% if media_filter == "short_video" %}
+        <span class="feedback-chip feedback-chip-soft">Short videos</span>
+        {% endif %}
+
+        {% if media_filter == "news_article" %}
+        <span class="feedback-chip feedback-chip-soft">News</span>
         {% endif %}
 
         {% if results is not none %}
@@ -114,29 +182,93 @@
             <input type="hidden" name="action" value="search">
             <input type="hidden" name="query" value="{{ suggestion }}">
             <input type="hidden" name="top_k" value="{{ top_k or 10 }}">
-            {% if image_only %}
-            <input type="hidden" name="image_only" value="1">
+
+            {% if media_filter %}
+            <input type="hidden" name="media_filter" value="{{ media_filter }}">
             {% endif %}
+
             <button type="submit" class="suggestion-link">{{ suggestion }}</button>
         </form>
     </div>
     {% endif %}
 </section>
 
+<section class="card web-live-card">
+    <div class="section-heading">
+        <div>
+            <h2>Import External Data</h2>
+            <p>
+                Write topics only. One import fetches documents, images, audio, videos, news,
+                and YouTube channel RSS short-video metadata when feeds are provided.
+            </p>
+        </div>
+    </div>
+
+    <form id="externalImportForm" class="web-live-form" data-dynamic-form="1" novalidate>
+        <div class="form-row">
+            <label for="externalImportTopics">Topics</label>
+            <textarea
+                id="externalImportTopics"
+                rows="8"
+                placeholder="python programming&#10;machine learning&#10;information retrieval&#10;computer vision"
+            ></textarea>
+            <small>
+                One topic per line. The system imports from Wikipedia, Openverse,
+                Internet Archive, GDELT news, and optional YouTube channel RSS feeds.
+            </small>
+        </div>
+
+        <div class="web-live-grid">
+            <div class="form-row">
+                <label for="externalImportLimit">Limit per source</label>
+                <input id="externalImportLimit" type="number" min="1" max="20" value="10">
+            </div>
+
+            <div class="form-row">
+                <label for="shortVideoPlatform">Short-video source</label>
+                <select id="shortVideoPlatform">
+                    <option value="none" selected>None</option>
+                    <option value="youtube_rss">YouTube channel RSS</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <label for="youtubeRssFeeds">YouTube channel RSS feeds</label>
+            <textarea
+                id="youtubeRssFeeds"
+                rows="4"
+                placeholder="https://www.youtube.com/feeds/videos.xml?channel_id=CHANNEL_ID"
+            ></textarea>
+            <small>
+                Optional. Required only when Short-video source is YouTube channel RSS.
+                One feed URL per line.
+            </small>
+        </div>
+
+        <button type="submit" class="primary-button">
+            Import Data
+        </button>
+    </form>
+
+    <div id="externalImportStatus" class="web-live-status"></div>
+    <div id="externalImportResults" class="web-live-results"></div>
+</section>
+
 <section class="query-image-shell">
     <div class="query-image-card">
         <div class="query-image-copy">
             <span class="query-image-badge">🖼️ Query by Image</span>
-            <h2>Find visually similar indexed images</h2>
+            <h2>Find object-aware similar indexed images</h2>
             <p>
-                Upload a query image or paste a local image path. The system compares it against indexed local images
-                using lightweight visual features.
+                Upload a query image or paste a local image path. The system compares detected object labels,
+                indexed image metadata, and lightweight visual features.
             </p>
 
             <ul class="query-image-points">
                 <li>Works only with indexed local images.</li>
-                <li>Uses average color, small thumbnail shape, and RGB histogram features.</li>
-                <li>Not semantic AI matching, CLIP, or embeddings.</li>
+                <li>Uses object-aware image enrichment when available.</li>
+                <li>Still lightweight. Not CLIP embeddings or full semantic AI matching.</li>
             </ul>
         </div>
 
@@ -196,7 +328,7 @@
             </div>
 
             <p class="form-note">
-                This does not replace text search. Higher similarity means visually closer according to simple image features.
+                This does not replace text search. Higher similarity now prefers object and metadata agreement, not only color similarity.
             </p>
         </form>
     </div>
@@ -223,6 +355,31 @@
             <div class="stat-label">Web pages</div>
             <div class="stat-value">{{ stats.web_pages }}</div>
         </article>
+
+        <article class="stat-card">
+            <div class="stat-label">Images</div>
+            <div class="stat-value">{{ stats.images }}</div>
+        </article>
+
+        <article class="stat-card">
+            <div class="stat-label">Audio</div>
+            <div class="stat-value">{{ stats.audio }}</div>
+        </article>
+
+        <article class="stat-card">
+            <div class="stat-label">Video</div>
+            <div class="stat-value">{{ stats.video }}</div>
+        </article>
+
+        <article class="stat-card">
+            <div class="stat-label">Short videos</div>
+            <div class="stat-value">{{ stats.short_videos or 0 }}</div>
+        </article>
+
+        <article class="stat-card">
+            <div class="stat-label">News</div>
+            <div class="stat-value">{{ stats.news_articles or 0 }}</div>
+        </article>
     </div>
 </section>
 
@@ -233,14 +390,14 @@
 
         {% if similar_image_path %}
         <p class="results-subtitle">
-            Showing visually similar indexed images for <strong>{{ similar_image_path }}</strong>
+            Showing object-aware similar indexed images for <strong>{{ similar_image_path }}</strong>
         </p>
         {% endif %}
 
         <div class="similar-results-note">
             <span>Score range: 0% to 100%.</span>
-            <span>Compared using color, thumbnail, and histogram features.</span>
-            <span>This is lightweight visual similarity, not semantic AI matching.</span>
+            <span>Uses object labels, metadata, and visual features.</span>
+            <span>This is lightweight similarity, not CLIP embeddings.</span>
         </div>
     </div>
 
@@ -253,7 +410,7 @@
                         <span class="result-url">{{ r.path }}</span>
                     </div>
 
-                    {% if r.is_image and not r.is_web %}
+                    {% if r.has_local_image_preview %}
                         <div class="result-image-wrap">
                             <img
                                 src="{{ url_for('image_preview', doc_id=r.doc_id) }}"
@@ -277,7 +434,18 @@
                             <span class="meta-pill meta-pill-strong">
                                 Similarity: {{ "%.1f"|format(r.score * 100) }}%
                             </span>
-                            <span class="meta-pill">Visual feature match</span>
+                        {% endif %}
+
+                        {% if r.object_score is defined %}
+                            <span class="meta-pill">
+                                Object: {{ "%.1f"|format(r.object_score * 100) }}%
+                            </span>
+                        {% endif %}
+
+                        {% if r.visual_score is defined %}
+                            <span class="meta-pill">
+                                Visual: {{ "%.1f"|format(r.visual_score * 100) }}%
+                            </span>
                         {% endif %}
                     </div>
 
@@ -286,7 +454,7 @@
                     {% endif %}
 
                     <p class="similar-score-help">
-                        Ranking is based on simple image features, so visually close colors may score higher than semantic meaning.
+                        Ranking now gives more weight to object/metadata matches and less weight to only color similarity.
                     </p>
                 </article>
             {% endfor %}
@@ -310,10 +478,37 @@
 {% if results is not none %}
 <section class="results-shell">
     <div class="results-header">
-        <h2>{% if image_only %}Image Results{% else %}Results{% endif %}</h2>
+        <h2>
+            {% if media_filter == "image" %}
+                Image Results
+            {% elif media_filter == "audio" %}
+                Audio Results
+            {% elif media_filter == "video" %}
+                Video Results
+            {% elif media_filter == "short_video" %}
+                Short Video Results
+            {% elif media_filter == "news_article" %}
+                News Results
+            {% else %}
+                Results
+            {% endif %}
+        </h2>
+
         {% if query %}
         <p class="results-subtitle">
-            Showing {% if image_only %}image{% endif %} search results for <strong>{{ query }}</strong>
+            Showing
+            {% if media_filter == "image" %}
+                image
+            {% elif media_filter == "audio" %}
+                audio
+            {% elif media_filter == "video" %}
+                video
+            {% elif media_filter == "short_video" %}
+                short-video
+            {% elif media_filter == "news_article" %}
+                news
+            {% endif %}
+            search results for <strong>{{ query }}</strong>
         </p>
         {% endif %}
     </div>
@@ -336,8 +531,8 @@
                             <input type="hidden" name="query" value="{{ item }}">
                             <input type="hidden" name="top_k" value="{{ top_k or 10 }}">
 
-                            {% if image_only %}
-                                <input type="hidden" name="image_only" value="1">
+                            {% if media_filter %}
+                                <input type="hidden" name="media_filter" value="{{ media_filter }}">
                             {% endif %}
 
                             <button type="submit" class="related-search-chip">
@@ -356,11 +551,20 @@
             {% for r in results %}
                 <article class="result-card {% if r.is_image %}result-card-image{% endif %}">
                     <div class="result-url-row">
-                        {% if r.is_web %}
+                        {% if r.is_short_video %}
+                            <span class="result-favicon">🎞️</span>
+                            <span class="result-url">{{ r.source_url or r.path }}</span>
+                        {% elif r.is_news_article %}
+                            <span class="result-favicon">📰</span>
+                            <span class="result-url">{{ r.source_url or r.path }}</span>
+                        {% elif r.is_web %}
                             <span class="result-favicon">🌐</span>
                             <span class="result-url">{{ r.path }}</span>
                         {% elif r.is_image %}
                             <span class="result-favicon">🖼️</span>
+                            <span class="result-url">{{ r.path }}</span>
+                        {% elif r.is_video %}
+                            <span class="result-favicon">🎬</span>
                             <span class="result-url">{{ r.path }}</span>
                         {% elif r.is_audio %}
                             <span class="result-favicon">🎧</span>
@@ -371,7 +575,18 @@
                         {% endif %}
                     </div>
 
-                    {% if r.is_image and not r.is_web %}
+                    {% if r.thumbnail_url and (r.is_short_video or r.is_news_article) %}
+                        <div class="result-image-wrap">
+                            <img
+                                src="{{ r.thumbnail_url }}"
+                                alt="{{ r.title or 'External result thumbnail' }}"
+                                class="result-image-thumb"
+                                loading="lazy"
+                            >
+                        </div>
+                    {% endif %}
+
+                    {% if r.has_local_image_preview %}
                         <div class="result-image-wrap">
                             <img
                                 src="{{ url_for('image_preview', doc_id=r.doc_id) }}"
@@ -382,7 +597,16 @@
                         </div>
                     {% endif %}
 
-                    {% if r.is_audio and not r.is_web %}
+                    {% if r.has_local_video_preview %}
+                        <div class="video-player-wrap">
+                            <video controls preload="metadata" class="video-player">
+                                <source src="{{ url_for('video_preview', doc_id=r.doc_id) }}">
+                                Your browser does not support the video player.
+                            </video>
+                        </div>
+                    {% endif %}
+
+                    {% if r.has_local_audio_preview %}
                         <div class="audio-player-wrap">
                             <audio controls preload="metadata" class="audio-player">
                                 <source src="{{ url_for('audio_preview', doc_id=r.doc_id) }}">
@@ -392,9 +616,9 @@
                     {% endif %}
 
                     <h3 class="result-title">
-                        {% if r.is_web %}
-                            <a href="{{ r.path }}" target="_blank" rel="noopener noreferrer">
-                                {{ r.title or r.path }}
+                        {% if r.is_web or r.is_short_video or r.is_news_article %}
+                            <a href="{{ r.source_url or r.path }}" target="_blank" rel="noopener noreferrer">
+                                {{ r.title or r.source_url or r.path }}
                             </a>
                         {% else %}
                             {{ r.title or r.path }}
@@ -411,16 +635,59 @@
                         {% if r.word_count is not none %}
                             <span class="meta-pill">Words: {{ r.word_count }}</span>
                         {% endif %}
+
+                        {% if r.source_name %}
+                            <span class="meta-pill">Source: {{ r.source_name }}</span>
+                        {% endif %}
+
+                        {% if r.creator %}
+                            <span class="meta-pill">Creator: {{ r.creator }}</span>
+                        {% endif %}
+
+                        {% if r.published_at %}
+                            <span class="meta-pill">Date: {{ r.published_at }}</span>
+                        {% endif %}
+
+                        {% if r.duration %}
+                            <span class="meta-pill">Duration: {{ r.duration }}</span>
+                        {% endif %}
                     </div>
 
                     {% if r.snippet %}
                         <p class="result-snippet">{{ r.snippet }}</p>
                     {% endif %}
 
-                    {% if r.is_audio %}
+                    {% if r.hashtags %}
+                        <p class="result-matched">
+                            <strong>Hashtags:</strong>
+                            {% for tag in r.hashtags %}
+                                #{{ tag }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </p>
+                    {% endif %}
+
+                    {% if r.is_short_video %}
+                        <p class="form-note">
+                            Metadata-only short-video result. Open the external link to view it on the source platform.
+                        </p>
+                    {% endif %}
+
+                    {% if r.is_news_article %}
+                        <p class="form-note">
+                            News result imported from RSS/metadata. Full article availability depends on the source.
+                        </p>
+                    {% endif %}
+
+                    {% if r.is_audio or r.is_video %}
                         <div class="audio-analysis-card">
                             <div class="audio-analysis-header">
-                                <span>🎧 Audio content</span>
+                                <span>
+                                    {% if r.is_video %}
+                                        🎬 Video content
+                                    {% else %}
+                                        🎧 Audio content
+                                    {% endif %}
+                                </span>
                                 <small>Transcript-based, not voice identity recognition</small>
                             </div>
 
@@ -465,8 +732,16 @@
             <div class="empty-results-icon">🔎</div>
             <h3>No results found</h3>
             <p>
-                {% if image_only %}
-                    Try a filename word, folder name, or sidecar caption text that matches your indexed images.
+                {% if media_filter == "image" %}
+                    Try an object name, image title, folder name, or sidecar caption text that matches your indexed images.
+                {% elif media_filter == "audio" %}
+                    Try a word from an indexed audio transcript or audio filename.
+                {% elif media_filter == "video" %}
+                    Try a word from an indexed video transcript, title, or video filename.
+                {% elif media_filter == "short_video" %}
+                    Try a title, creator, platform, caption, description, hashtag, or short-video URL from imported metadata.
+                {% elif media_filter == "news_article" %}
+                    Try a headline term, source name, article topic, or summary keyword from imported RSS news.
                 {% else %}
                     Try a broader query, an exact quoted phrase, or a more specific keyword.
                 {% endif %}
@@ -499,7 +774,13 @@
                         Index Local Files
                     </button>
 
-                    <button type="submit" name="action" value="force_index_local" class="secondary-btn">
+                    <button
+                        type="submit"
+                        name="action"
+                        value="force_index_local"
+                        class="secondary-btn"
+                        data-confirm-message="Are you sure you want to force re-index this folder? This will refresh this folder and remove stale indexed files from it."
+                    >
                         Force Re-index This Folder
                     </button>
                 </div>
@@ -570,7 +851,13 @@
             <form method="post">
                 <input type="hidden" name="action" value="reset_index">
                 <p>Delete the current saved index and clear all indexed content.</p>
-                <button type="submit" class="danger-btn">Reset Index</button>
+                <button
+                    type="submit"
+                    class="danger-btn"
+                    data-confirm-message="Are you sure you want to reset the index? This will delete all indexed content from the search engine."
+                >
+                    Reset Index
+                </button>
             </form>
         </div>
     </div>

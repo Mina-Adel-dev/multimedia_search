@@ -2,7 +2,7 @@
 
 import math
 from collections import defaultdict
-from typing import Dict, List, Set, Tuple
+from typing import Any, Dict, List, Set, Tuple
 
 from multimedia_search.core.document import Document
 
@@ -12,12 +12,12 @@ class IndexBuilder:
 
     def __init__(self):
         self.term_to_postings: Dict[str, List[Tuple[int, List[int]]]] = defaultdict(list)
-        self.doc_metadata: Dict[int, Dict] = {}
+        self.doc_metadata: Dict[int, Dict[str, Any]] = {}
         self.idf: Dict[str, float] = {}
         self.doc_count: int = 0
 
     @classmethod
-    def from_existing(cls, data: dict) -> 'IndexBuilder':
+    def from_existing(cls, data: dict) -> "IndexBuilder":
         """Create an IndexBuilder instance from previously saved data."""
         builder = cls()
         builder.doc_metadata = data["doc_metadata"]
@@ -25,6 +25,22 @@ class IndexBuilder:
         builder.idf = data["idf"]
         builder.doc_count = data["doc_count"]
         return builder
+
+    def _build_doc_metadata(self, doc: Document) -> Dict[str, Any]:
+        """Build persisted metadata for one document."""
+        tokens = doc.tokens or []
+        extra_metadata = dict(getattr(doc, "metadata", None) or {})
+
+        metadata = {
+            "path": str(doc.path),
+            "file_type": doc.file_type,
+            "num_tokens": len(tokens),
+            "norm": 0.0,
+            "raw_text": doc.raw_text,
+        }
+
+        metadata.update(extra_metadata)
+        return metadata
 
     def build(self, docs: List[Document]) -> None:
         """
@@ -35,24 +51,21 @@ class IndexBuilder:
         self.doc_metadata = {}
         self.idf = {}
         self.doc_count = len(docs)
-    
+
         for doc in docs:
             doc_id = doc.doc_id
-            self.doc_metadata[doc_id] = {
-                "path": str(doc.path),
-                "file_type": doc.file_type,
-                "num_tokens": len(doc.tokens),
-                "norm": 0.0,
-                "raw_text": doc.raw_text,
-            }
-    
-            for pos, term in enumerate(doc.tokens):
+            tokens = doc.tokens or []
+
+            self.doc_metadata[doc_id] = self._build_doc_metadata(doc)
+
+            for pos, term in enumerate(tokens):
                 postings = self.term_to_postings[term]
+
                 if postings and postings[-1][0] == doc_id:
                     postings[-1][1].append(pos)
                 else:
                     postings.append((doc_id, [pos]))
-    
+
         self._compute_idf()
         self._compute_doc_norms()
 
@@ -63,15 +76,13 @@ class IndexBuilder:
         """
         for doc in docs:
             doc_id = doc.doc_id
-            self.doc_metadata[doc_id] = {
-                "path": str(doc.path),
-                "file_type": doc.file_type,
-                "num_tokens": len(doc.tokens),
-                "norm": 0.0,
-                "raw_text": doc.raw_text,          # <-- added
-            }
-            for pos, term in enumerate(doc.tokens):
+            tokens = doc.tokens or []
+
+            self.doc_metadata[doc_id] = self._build_doc_metadata(doc)
+
+            for pos, term in enumerate(tokens):
                 postings = self.term_to_postings[term]
+
                 if postings and postings[-1][0] == doc_id:
                     postings[-1][1].append(pos)
                 else:
@@ -84,6 +95,7 @@ class IndexBuilder:
     def _compute_idf(self) -> None:
         """Compute inverse document frequency for each term."""
         n_docs = self.doc_count
+
         for term, postings in self.term_to_postings.items():
             df = len(postings)
             self.idf[term] = math.log((n_docs - df + 0.5) / (df + 0.5) + 1.0)
@@ -95,13 +107,16 @@ class IndexBuilder:
 
         for term, postings in self.term_to_postings.items():
             idf = self.idf[term]
+
             for doc_id, positions in postings:
                 tf = len(positions)
                 weight = tf * idf
                 self.doc_metadata[doc_id]["norm"] += weight * weight
 
         for doc_id in self.doc_metadata:
-            self.doc_metadata[doc_id]["norm"] = math.sqrt(self.doc_metadata[doc_id]["norm"])
+            self.doc_metadata[doc_id]["norm"] = math.sqrt(
+                self.doc_metadata[doc_id]["norm"]
+            )
 
     def get_data(self) -> dict:
         """Return all index data for persistence."""
@@ -144,7 +159,7 @@ class IndexReader:
         return {doc_id for doc_id, _ in self.get_postings(term)}
 
     def get_data(self) -> dict:
-        """Return the raw index data (for rebuilding)."""
+        """Return the raw index data for rebuilding."""
         return {
             "doc_metadata": self.doc_metadata,
             "term_to_postings": self.term_to_postings,
