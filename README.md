@@ -212,60 +212,25 @@ $env:SHAZAM_APP_PORT = "5001"
 ```
 
 ## Screenshots
-
-Place all project screenshots in:
-
-```text
-docs/screenshots/
-```
-
-Recommended screenshot files:
-
-```text
-docs/screenshots/multimedia-home.png
-docs/screenshots/shazam-home.png
-docs/screenshots/navigation-button.png
-docs/screenshots/multimedia-search-results.png
-docs/screenshots/shazam-detection-result.png
-```
-
-After uploading screenshots, update this section using the following format:
-
-```markdown
-![Multimedia Home](docs/screenshots/multimedia-home.png)
-![Shazam Home](docs/screenshots/shazam-home.png)
-![Navigation Button](docs/screenshots/navigation-button.png)
-```
-
-### Screenshot Checklist
-
-- Multimedia Project home page
-- Multimedia search results page
-- `Open Shazam` navigation button
-- Shazam Project home page
-- Shazam song detection result
-
-## Future Improvements
-
-- Add a shared landing page that lists both systems without changing their internal UI.
-- Add automatic health checks to show whether the Shazam server is running.
-- Add a fallback message if the Shazam app is not available.
-- Add Docker support for easier deployment.
-- Add a unified startup script for running both applications together.
-- Add automated end-to-end tests for navigation between the two systems.
-- Add deployment documentation for university demo environments.
+<img width="1911" height="885" alt="1" src="https://github.com/user-attachments/assets/2ca95e04-f4e5-4b4b-a8f0-2ea5f373282e" />
+<img width="1747" height="886" alt="2" src="https://github.com/user-attachments/assets/3a35c762-8afd-41dd-aa46-b87fccbc2c02" />
+<img width="1227" height="867" alt="SHAZAM " src="https://github.com/user-attachments/assets/b08d88f3-51d2-47ba-be30-b109ecba7f94" />
+<img width="951" height="876" alt="detection" src="https://github.com/user-attachments/assets/e199b103-650a-47fc-90f2-979f311d934d" />
 
 ## Contributors / Team
 
-Update this section with the final team information before submission.
 
 | Role | Name |
 | --- | --- |
-| Student 1 | Your Name |
-| Student 2 | Team Member Name |
-| Supervisor | Supervisor Name |
-| Department | Department Name |
-| University | University Name |
+| Student 1 | Mina Atef |
+| Student 2 | Mina Adel |
+| Student 3 | Arwa Ali |
+| Student 4 | Nour el weli |
+| Student 5 | Malak mahdy |
+
+
+| Supervisor | Dr  Wafaa & Dr Rokhia|
+
 
 ## License
 
