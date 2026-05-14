@@ -1,4 +1,0 @@
-Python is a programming language.
-This is a sample text file for parser testing.
-The multimedia search engine can index local files and web pages.
-cat , cat , cat , dog, dog ,dog
