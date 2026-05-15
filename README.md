@@ -227,7 +227,7 @@ $env:SHAZAM_APP_PORT = "5001"
 | Student 3 | Arwa Ali |
 | Student 4 | Nour el weli |
 | Student 5 | Malak mahdy |
-| Supervisor | Dr  Wafaa & Dr Rokhia|
+| Supervisor | Dr  Wafaa & Dr Rokia|
 
 
 
